@@ -1,7 +1,4 @@
-"""Check deployment tensors against original K-Prism preprocessing code."""
-import ast
-import importlib.util
-from pathlib import Path
+"""Check deployment tensors against the fixed cardiac training recipe."""
 import unittest
 
 import albumentations as A
@@ -12,43 +9,48 @@ import torch
 
 from server import cardiac_model as cm
 
-ORIGINAL = Path(__file__).resolve().parents[2] / 'Verse_cfg'
-
-
-def original_definitions(path, names, scope):
-    tree = ast.parse(path.read_text())
-    subset = ast.Module(body=[node for node in tree.body if isinstance(node, (ast.FunctionDef, ast.ClassDef)) and node.name in names], type_ignores=[])
-    exec(compile(subset, str(path), 'exec'), scope)
-    return scope
-
-
 class CardiacInputTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         torch.set_num_threads(2)
 
     def test_query_and_reference_match_original_test_transforms_exactly(self):
-        scope = dict(vars(A), ToTensorV2=ToTensorV2)
-        original_definitions(ORIGINAL / 'Verse_2_MOE/data_mapper/test_data_utils.py',
-                             ['build_test_image_transform', 'build_ref_image_transform'], scope)
+        query_transform = A.Compose([
+            A.Normalize(mean=(.26, .26, .26), std=(.30, .30, .30), max_pixel_value=255.),
+            ToTensorV2(transpose_mask=True),
+        ])
+        reference_transform = A.Compose([
+            A.LongestMaxSize(max_size=512),
+            A.PadIfNeeded(min_height=512, min_width=512, border_mode=0, value=0, mask_value=0),
+            A.Normalize(mean=(.26, .26, .26), std=(.30, .30, .30), max_pixel_value=255.),
+            ToTensorV2(transpose_mask=True),
+        ])
         prepared = np.random.default_rng(10).uniform(0, 255, (256, 256)).astype(np.float32)
         image = torch.from_numpy(prepared)[None].repeat(3, 1, 1)
         resized = torch.nn.functional.interpolate(image[None], (512, 512), mode='bilinear', align_corners=False)[0]
-        expected = scope['build_test_image_transform']()(image=resized.numpy().transpose(1, 2, 0).astype('uint8'))['image']
+        expected = query_transform(image=resized.numpy().transpose(1, 2, 0).astype('uint8'))['image']
         torch.testing.assert_close(cm.image_tensor(prepared), expected, rtol=0, atol=0)
-        expected_ref = scope['build_ref_image_transform']()(image=image.numpy().transpose(1, 2, 0).astype('uint8'))['image']
+        expected_ref = reference_transform(image=image.numpy().transpose(1, 2, 0).astype('uint8'))['image']
         torch.testing.assert_close(cm.image_tensor(prepared, reference=True), expected_ref, rtol=0, atol=0)
 
     def test_raw_preparation_matches_original_slice_clip_and_physical_resize(self):
-        scope = {'np': np, 'sitk': sitk}
-        original_definitions(ORIGINAL / 'datasets/utils/nii_norm.py', ['normalize_data_2d'], scope)
-        original_definitions(ORIGINAL / 'datasets/utils/nii_resize.py', ['resample_sitkImage_by_size'], scope)
         raw = np.random.default_rng(0).uniform(-40, 1500, (3, 103, 147)).astype(np.float64)
         raw[0].fill(30)
-        normalized = scope['normalize_data_2d'](raw.copy())
+        normalized = raw.copy()
+        for plane in normalized:
+            lower, upper = np.min(plane), np.percentile(plane, 98)
+            plane[plane > upper] = upper
+            plane[:] = (plane - lower) / (upper - lower + .0001)
         image = sitk.GetImageFromArray(normalized)
         image.SetSpacing([1.37, 2.41, 8.])
-        resized = scope['resample_sitkImage_by_size'](image, [256, 256, 3])
+        resampler = sitk.ResampleImageFilter()
+        resampler.SetSize([256, 256, 3])
+        resampler.SetOutputSpacing((np.array(image.GetSize()) * np.array(image.GetSpacing()) / [256, 256, 3]).tolist())
+        resampler.SetOutputOrigin(image.GetOrigin())
+        resampler.SetOutputDirection(image.GetDirection())
+        resampler.SetInterpolator(sitk.sitkLinear)
+        resampler.SetDefaultPixelValue(float(normalized.min()))
+        resized = resampler.Execute(image)
         original = sitk.GetArrayFromImage(resized).astype(np.float32)
         original = (original-original.min())/(original.max()-original.min())*255.
         np.testing.assert_array_equal(cm.prepare_frame(raw, (1.37, 2.41, 8.)), original)

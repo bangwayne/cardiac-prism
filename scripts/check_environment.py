@@ -38,14 +38,16 @@ def main():
             errors.append(f'{module}: {error}')
     try:
         import torch
+        from server.cuda_devices import device_properties
         available = torch.cuda.is_available()
-        print(f'CUDA available: {available}; devices: {torch.cuda.device_count()}')
+        devices = device_properties()
+        print(f'CUDA available: {available}; devices: {len(devices)}')
         if args.device == 'cuda' and not available:
             errors.append('CUDA was requested but is unavailable. Check the NVIDIA driver and GPU visibility.')
         if args.device == 'cuda' and available:
             (torch.ones((8, 8), device='cuda') @ torch.ones((8, 8), device='cuda')).cpu()
-        for index in range(torch.cuda.device_count()):
-            print(f'GPU {index}: {torch.cuda.get_device_name(index)}')
+        for index, properties in enumerate(devices):
+            print(f'GPU {index}: {properties.name}')
     except Exception as error:
         errors.append(f'PyTorch execution: {error}')
     try:

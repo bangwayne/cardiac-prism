@@ -87,14 +87,12 @@ class ModelService:
         if self.devices is None:
             devices = [{'id': 'cpu', 'name': 'CPU'}]
             if self.predictor is None:
-                import torch
+                from .cuda_devices import device_properties
                 physical = os.environ.get('CUDA_VISIBLE_DEVICES', '').split(',')
-                if torch.cuda.is_available():
-                    for index in range(torch.cuda.device_count()):
-                        properties = torch.cuda.get_device_properties(index)
-                        number = physical[index] if index < len(physical) and physical[index] else str(index)
-                        devices.append({'id': f'cuda:{index}', 'name': f'GPU {number} · {properties.name}',
-                                        'memory_gb': round(properties.total_memory / 1024**3, 1)})
+                for index, properties in enumerate(device_properties()):
+                    number = physical[index] if index < len(physical) and physical[index] else str(index)
+                    devices.append({'id': f'cuda:{index}', 'name': f'GPU {number} · {properties.name}',
+                                    'memory_gb': round(properties.total_memory / 1024**3, 1)})
             self.devices = devices
         return self.devices
 

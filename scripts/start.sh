@@ -23,6 +23,22 @@ if [[ ! -r "$VERSE_CHECKPOINT" ]]; then
 fi
 mkdir -p "$KPRISM_WORKSPACE" "$MPLCONFIGDIR"
 cd "$KPRISM_ROOT"
+"$KPRISM_PYTHON" - <<'PY'
+import os
+requested = os.environ['VERSE_DEVICE']
+if requested not in ('auto', 'cpu'):
+    import torch
+    try:
+        device = torch.device(requested)
+        if device.type != 'cuda' or not torch.cuda.is_available():
+            raise RuntimeError('CUDA is unavailable')
+        torch.empty(0, device=device)
+    except (ValueError, RuntimeError, AssertionError) as error:
+        raise SystemExit(
+            f'Cannot start on {requested}: {error}. Check the NVIDIA driver and '
+            'Container Toolkit, or select KPRISM_DEVICE=cpu explicitly.'
+        ) from error
+PY
 exec "$KPRISM_PYTHON" -m uvicorn server.app:app \
   --host "${KPRISM_HOST:-127.0.0.1}" --port "${KPRISM_PORT:-8502}" \
   --log-level "${KPRISM_LOG_LEVEL:-info}" "$@"

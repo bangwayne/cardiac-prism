@@ -43,7 +43,7 @@ The model and example are fetched separately. Their locations and SHA-256 values
 
 ## 3. Install with Docker
 
-Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Compose plugin](https://docs.docker.com/compose/install/linux/) using the instructions for your distribution. The `docker` command must work for your account. The helper also needs Python 3, Git LFS, and authorized GitHub SSH access on the host for private asset downloads. These credentials do not need to be copied into the container.
+Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Compose plugin](https://docs.docker.com/compose/install/linux/) using the instructions for your distribution. The `docker` command must work for your account. The helper also needs Python 3.9 or later, Git LFS, and authorized GitHub SSH access on the host for private asset downloads. These credentials do not need to be copied into the container.
 
 Keep a Docker installation and its persistent directories on a filesystem the Docker daemon can access. On shared research servers, home/project directories can be NFS mounts that deny the daemon access even though your account can read them. In that case, clone the project into an administrator-provisioned **local, durable** directory such as `/srv/projects/cardiac-prism`, or use the native installation. Do not keep production studies under `/tmp`, which can be cleaned automatically, and do not change broad home-directory permissions to work around a mount error.
 
@@ -70,6 +70,14 @@ The helper prepares the writable host directories, downloads and verifies assets
 ### Select GPUs
 
 The GPU container exposes the configured NVIDIA devices. Choose the inference GPU through **Inference device** and the GPUs for a batch job through the multiple-GPU selector. GPU indices inside a container can differ from host indices; use the devices actually offered by the running workstation.
+
+To restrict which host GPUs are exposed, set `NVIDIA_VISIBLE_DEVICES` to physical host indices or complete GPU UUIDs before starting:
+
+```bash
+NVIDIA_VISIBLE_DEVICES=0,1 ./scripts/docker.sh gpu up --build -d
+```
+
+Use the workstation's displayed IDs after startup; they can be renumbered inside the container.
 
 Run either the CPU or GPU service on a given host port. If switching variants, save your work, stop the existing variant, then start the other:
 
@@ -129,12 +137,6 @@ KPRISM_DEVICE=cpu ./start.sh
 
 ```bash
 KPRISM_DEVICE=cuda:0 ./start.sh
-```
-
-To expose only selected host GPUs:
-
-```bash
-CUDA_VISIBLE_DEVICES=0,2 KPRISM_DEVICE=cuda:0 ./start.sh
 ```
 
 The UI can switch among available devices while no inference job is running. **Segment all time frames** and temporal propagation can use several selected GPUs. Each selected GPU loads its own model, so the first job includes loading time. Results are applied only after the entire job succeeds; the progress panel shows preparation, prediction, and application phases.
@@ -255,6 +257,7 @@ Before upgrading, back up the workspace and read [CHANGELOG.md](../CHANGELOG.md)
 | Browser cannot connect | Confirm the service is running, the SSH terminal remains open, and the browser port matches the first port in `-L`. |
 | Viewer is blank or reports a shared-memory error | Use localhost through SSH or HTTPS; retain isolation headers, enable browser hardware acceleration, and inspect the browser's WebGL availability. |
 | No GPU is offered | Run `nvidia-smi`; check Docker NVIDIA runtime configuration or the CUDA-enabled native environment and visible-device settings. |
+| GPU container reports `Failed to initialize NVML: Unknown Error` | See the explicit device-binding workaround below, or use the native installation. |
 | First segmentation is slow | The first request loads a model. A multiple-GPU job loads one copy per selected GPU. Watch the job's preparation and per-GPU progress. |
 | A large job shows progress but no partial masks | Whole-study jobs apply their masks together when complete. Cancel keeps the current annotation. |
 | CUDA out of memory | Reduce selected workers, free memory occupied by other jobs, select another GPU, or use CPU. Keep at least one verified backup before restarting. |
@@ -266,3 +269,14 @@ Before upgrading, back up the workspace and read [CHANGELOG.md](../CHANGELOG.md)
 | Editing is disabled | Pause playback, wait for a job, reopen a completed study if required, and inspect organ and slice locks. |
 
 For a reproducible issue, include the release version, installation method, browser, device type, and a de-identified error description. Avoid posting patient images, study backups, access tokens, or raw DICOM headers in public issues.
+
+### NVIDIA container device access
+
+Some hosts have a [documented NVIDIA Container Toolkit/cgroup device-access issue](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html#containers-losing-access-to-gpus-with-error-failed-to-initialize-nvml-unknown-error). The host's `nvidia-smi` may work while a container reports an NVML error or cannot initialize CUDA. Cardiac Prism's helper offers explicit device bindings for this situation:
+
+```bash
+KPRISM_DOCKER_DEVICE_BINDINGS=1 NVIDIA_VISIBLE_DEVICES=0,1 \
+  ./scripts/docker.sh gpu up -d
+```
+
+Use the physical host GPU indices or complete UUIDs assigned to your workload. The helper binds those GPUs and the required NVIDIA control/UVM devices; it does not enable privileged mode or reconfigure the Docker daemon. The generated override is kept in the ignored `runtime/` directory. For later starts, keep both variables in the shell environment or repeat the command prefix. This helper option is read before Compose loads `.env`, so setting it only in `.env` is insufficient. This addresses device exposure; it does not install a missing driver or make an unsupported GPU architecture compatible.

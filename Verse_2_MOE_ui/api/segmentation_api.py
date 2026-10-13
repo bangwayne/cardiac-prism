@@ -190,7 +190,9 @@ class SegmentationAPI:
         log.info("Loading model from %s on %s", resume_path, device)
 
         model = InferenceCore(cfg).to(device)
-        ckpt = torch.load(str(resume_path), map_location=device)
+        # Load storage on CPU, then copy into the already placed model. This
+        # avoids a second GPU copy and Torch 1.13's UUID/NVML device-count bug.
+        ckpt = torch.load(str(resume_path), map_location='cpu')
         report = load_checkpoint_state(model, ckpt["model"])
         report["checkpoint_path"] = str(resume_path)
         report["click_prompt_seed"] = model.sem_seg_head.predictor.click_prompt_seed

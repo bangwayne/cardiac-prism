@@ -9,7 +9,6 @@ from PIL import Image
 import yaml
 import math
 import random
-import pdb
 import logging
 import copy
 from pathlib import Path

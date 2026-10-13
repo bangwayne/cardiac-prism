@@ -1,6 +1,7 @@
 """Concurrent GPU startup, reuse and cancellation without allocating CUDA."""
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -8,6 +9,20 @@ from server.gpu_pool import GPUStartupCancelled, GPUWorker, GPUWorkerPool, _work
 
 
 class GPUStartupTests(unittest.TestCase):
+    def test_uuid_visibility_uses_real_cuda_count_with_pinned_torch(self):
+        import torch
+        from server.inference import ModelService
+        properties = SimpleNamespace(name='Example GPU', total_memory=24 * 1024 ** 3)
+        with patch.dict('os.environ', {'CUDA_VISIBLE_DEVICES': 'GPU-example'}), \
+                patch.object(torch.cuda, 'is_available', return_value=True), \
+                patch.object(torch.cuda, 'device_count', return_value=0), \
+                patch.object(torch._C, '_cuda_getDeviceCount', return_value=1, create=True), \
+                patch.object(torch.cuda, 'init'), \
+                patch.object(torch.cuda, '_get_device_properties', return_value=properties, create=True), \
+                patch.object(torch.cuda, 'get_device_properties', side_effect=AssertionError('Invalid device id')):
+            devices = ModelService().available_devices()
+        self.assertEqual([device['id'] for device in devices], ['cpu', 'cuda:0'])
+
     def test_container_worker_uses_uuid_instead_of_remapped_cuda_ordinal(self):
         connection = Mock()
         connection.recv.return_value = None

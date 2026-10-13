@@ -10,7 +10,6 @@ import json
 import yaml
 import math
 import random
-import pdb
 import logging
 import copy
 from pathlib import Path
@@ -40,7 +39,6 @@ class SemanticTestDataset(Dataset):
         self.dataset_samples = []
         self.metadata = self.load_metadata()
         self.resize_processor = SegmentationPreprocessor(long_size=512)
-        print(self.images_path)
         # for i in range(len(self.data_name_list)):
         #     images_path = self.images_path_list[i]
         #     for x in sorted(images_path.glob('*.nii.gz')):
@@ -54,7 +52,6 @@ class SemanticTestDataset(Dataset):
         # if data_name in self.data_name_list:
         images_path = self.images_path
         masks_path = self.masks_path
-        print(self.data_config)
         ndim = self.data_config[self.data_name]["ndim"]
         if ndim == 3:
             img_name_list = [x.name for x in sorted(images_path.glob('*.nii.gz'))]
@@ -105,7 +102,6 @@ class SemanticTestDataset(Dataset):
                 # Since it's 2D, treat whole image as one "slice"
                 slice_index = 0
                 slice_mask = array_mask
-                print(np.unique(slice_mask))
                 slice_unique_labels = np.unique(slice_mask[slice_mask != 0])
                 slice_unique_labels = [label for label in slice_unique_labels if label in unique_labels]
                 if len(slice_unique_labels) > 0:

@@ -167,7 +167,25 @@ def check_equal(first, second, message):
     np.testing.assert_array_equal(first, second, err_msg=message)
 
 
-def smoke(api, source, output, gpu_ids, cpu_check, checks):
+def choose_device(health, gpu_ids, inventory, requested=None):
+    devices = health['model']['available_devices']
+    available = {entry['id'] for entry in devices}
+    if requested is not None:
+        if requested not in available:
+            raise RuntimeError(f'Choose --device from this service: {sorted(available)}')
+        return requested
+    if not gpu_ids:
+        return 'cpu'
+    selected = next(entry for entry in inventory if entry['id'] == gpu_ids[0])
+    prefixes = (f"GPU {selected['id']} · ", f"GPU {selected['uuid']} · ")
+    matches = [entry['id'] for entry in devices if entry['name'].startswith(prefixes)]
+    if len(matches) != 1:
+        raise RuntimeError('The first selected batch GPU cannot be mapped to a main inference device. '
+                           'Inspect /api/health and choose its matching logical --device explicitly.')
+    return matches[0]
+
+
+def smoke(api, source, output, gpu_ids, cpu_check, checks, target_device):
     image = sitk.ReadImage(str(source))
     assert image.GetDimension() == 4 and image.GetSize()[2] >= 2 and image.GetSize()[3] >= 2
     start_z = max(0, image.GetSize()[2] // 2 - 1)
@@ -180,7 +198,6 @@ def smoke(api, source, output, gpu_ids, cpu_check, checks):
     assert view['shape'][:2] == [2, 2]
     checks.append('4D upload and geometry')
 
-    target_device = 'cuda:0' if gpu_ids else 'cpu'
     api.request('/api/model/device', {'device': target_device})
     api.run(study, 'inference', time=0, slice=0, organ=2, mode='organ')
     initial = api.masks(study)
@@ -230,9 +247,12 @@ def smoke(api, source, output, gpu_ids, cpu_check, checks):
     check_equal(api.masks(study), erased, 'Redo did not restore the eraser result')
     checks.append('One-pixel brush priority, erase, undo and redo')
 
+    api.run(study, 'inference', time=0, slice=0, organ=2, mode='organ_click',
+            point={'x': int(x), 'y': int(y), 'positive': True})
     api.post(study, 'slice-locks', times=[0], slices=[0], locked=True)
     protected = api.masks(study)[:, 0, 0].copy()
     locked_backup = backup_signature(api.backup(study, 'smoke-before-locked-batch'))
+    assert '0:0:2' in locked_backup['priors'], 'Locked slice must include a real probability prior'
     fields = {'gpu_ids': gpu_ids} if gpu_ids else {}
     job = api.run(study, 'segment-all-time-frames', **fields)
     assert job['completed_slices'] == 3
@@ -348,6 +368,7 @@ def main():
     parser.add_argument('--image', type=Path, default=Path('demo-data/images/patient001_4d.nii.gz'))
     parser.add_argument('--output', type=Path, required=True, help='Directory outside the published source tree')
     parser.add_argument('--gpu-ids', help='Comma-separated GPU IDs offered by /api/gpus; omit for CPU-only checks')
+    parser.add_argument('--device', help='Main inference device from /api/health; by default resolves the first selected GPU')
     parser.add_argument('--cpu-check', action='store_true', help='Also run CPU inference and restore the GPU device')
     parser.add_argument('--full-cine', action='store_true', help='Compare a full cine on one and multiple GPUs')
     parser.add_argument('--resume-report', type=Path, help='After restarting the test server, verify the studies from this completed report')
@@ -368,9 +389,18 @@ def main():
         existing = api.request('/api/projects')
         if existing and not args.allow_existing_studies:
             raise RuntimeError('Refusing a nonempty workspace. Start an isolated test server or explicitly allow disposable existing studies.')
+        inventory = []
+        if gpu_ids:
+            inventory = api.request('/api/gpus')
+            available = {item['id'] for item in inventory if item['available']}
+            if len(gpu_ids) != len(set(gpu_ids)) or not set(gpu_ids) <= available:
+                raise RuntimeError(f'Choose distinct available GPU IDs from this service: {sorted(available)}')
+            report['gpu_inventory'] = inventory
+        report['inference_device'] = choose_device(report['health_before'], gpu_ids, inventory, args.device)
         assert args.image.is_file(), f'Sample image not found: {args.image}'
         report['input_sha256'] = digest(args.image.read_bytes())
-        report['smoke'] = smoke(api, args.image, args.output, gpu_ids, args.cpu_check, report['checks'])
+        report['smoke'] = smoke(api, args.image, args.output, gpu_ids, args.cpu_check, report['checks'],
+                                report['inference_device'])
         if args.full_cine:
             report['full_cine'] = full_cine(api, args.image, gpu_ids, report['checks'])
         report['health_after'] = api.request('/api/health')

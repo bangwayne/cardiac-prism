@@ -84,8 +84,6 @@ class RefAlbuTransformWrapper:
         augmented = self.albu_transform(image=image, mask=mask)
         sample['image'] = augmented['image']  # torch.tensor [3, H, W]
         sample['sem_seg'] = augmented['mask'].long()  # torch.tensor [H, W]
-        # sample['image'] = torch.from_numpy(augmented['image'].transpose(2, 0, 1)).float()  # (3, H, W)
-        # sample['sem_seg'] = torch.from_numpy(augmented['mask']).long()  # (H, W)
 
         return sample
 
@@ -100,20 +98,11 @@ def get_loader(cfg):
                                              mode='val',
                                              transform=train_transform,
                                              ref_transform=ref_transform)
-    #                                                                         "/jupyproject/Verse_cfg/bad_samples_log.txt")
-    # default to be true
-    # samples_weight = torch.from_numpy(np.array(combination_train_ds.sample_weight_list))
-    # # train_sampler = WeightedDistributedSampler(combination_train_ds, samples_weight)
-
     samples_weight = torch.from_numpy(np.array(combination_train_ds.sample_weight_list))
-    # train_sampler = WeightedDistributedSampler(combination_train_ds, samples_weight, num_samples=30000, replacement=True)
     train_sampler = WeightedDistributedSampler(combination_train_ds, samples_weight)
-    # train_sampler = None
-    # train_sampler = DistributedSampler(combination_train_ds)
     train_loader = data.DataLoader(
         combination_train_ds,
         batch_size=cfg.training.batch_size,
-        # shuffle=True,
         shuffle=(train_sampler is None),
         num_workers=cfg.training.num_workers,
         sampler=train_sampler,

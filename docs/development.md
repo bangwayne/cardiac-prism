@@ -55,7 +55,18 @@ Run the backend suite from the repository root:
 
 The test helper uses an isolated workspace. Tests generate synthetic fixtures and must not write to a user's study directory. GPU integration checks require the exact released checkpoint and an available GPU; a mocked predictor verifies API behavior but is not evidence of numerical equivalence to the real model.
 
-Browser tests use Playwright. Review each test's documented fixture and server requirements before running it. They cover editing controls, orientation, surface colors, and cine/cache behavior. Keep test artifacts outside committed source. Screenshots used in documentation must contain only redistributable or synthetic images.
+Run the browser suite with Playwright from the repository root:
+
+```bash
+export PATH="$PWD/runtime/node/bin:$PATH"
+cd frontend
+npx playwright install --with-deps chromium
+npm test
+```
+
+The runner generates synthetic cine and orientation fixtures, starts temporary backend and frontend servers on unused loopback ports, and checks their workspace before creating studies. It covers editing, 4D playback, orientation pixels, source-space exports, surface colors, and lossless frame caching. It stops the temporary services and removes their study workspace when finished. Reports and screenshots remain under the ignored `test-results/` directory.
+
+The runner uses `.venv/bin/python` by default. Set `KPRISM_TEST_PYTHON` for a different installed environment, or `KPRISM_CHROMIUM_EXECUTABLE` to use an existing compatible Chrome/Chromium executable instead of Playwright's download. These are testing options, not workstation startup settings. Screenshots used in documentation must contain only redistributable or synthetic images.
 
 For frontend changes, run TypeScript compilation and the relevant browser checks. For persistence changes, test both save/restart and full-backup export/import. For changes to inference, compare actual predictions and saved refinement context against the released model under the same preprocessing.
 
@@ -69,7 +80,7 @@ For frontend changes, run TypeScript compilation and the relevant browser checks
   --output ../cardiac-prism-validation
 ```
 
-For a GPU installation with two available GPUs, add `--gpu-ids 0,1 --cpu-check --full-cine`. Use the actual GPU IDs returned by `/api/gpus`. The full check compares every mask and saved probability prior between single-GPU and multiple-GPU inference on the example cine, in addition to editing, locks, propagation, and backup restoration. It can take several minutes and requires space for temporary full-study backups.
+For a GPU installation with two available GPUs, add `--gpu-ids 0,1 --cpu-check --full-cine`. Use the actual GPU IDs returned by `/api/gpus`. The validator maps the first selected GPU to the main inference device using the inventory and `/api/health`; with an unusual visibility mapping, supply the corresponding logical device explicitly, for example `--device cuda:0`. The full check compares every mask and saved probability prior between single-GPU and multiple-GPU inference on the example cine, in addition to editing, locks, propagation, and backup restoration. It can take several minutes and requires space for temporary full-study backups.
 
 After a successful check, restart that test server with the same disposable workspace, then verify persistence:
 

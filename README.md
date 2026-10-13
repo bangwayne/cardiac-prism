@@ -2,6 +2,10 @@
 
 A self-hosted workstation for viewing and refining cardiac MR segmentations. Open a 3D volume or 4D cine, inspect linked slice views, segment RV / MYO / LV, and refine the result with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
 
+![Cardiac Prism showing linked cardiac MR views and a 3D segmentation surface](docs/images/workstation.png)
+
+*ACDC end-diastolic volume with its imported expert reference annotation; this screenshot illustrates the workstation interface. [Data attribution and terms](docs/sample-data.md).*
+
 **Source-available for noncommercial use.** The workstation and released cardiac model use [PolyForm Noncommercial 1.0.0](LICENSE). Academic research and other permitted noncommercial purposes are supported; commercial uses outside the license's permitted purposes require separate permission. Upstream components and public sample data retain their own licenses. See [NOTICE](NOTICE).
 
 The repository is currently distributed privately to authorized collaborators. Your GitHub account needs repository access and a working SSH key. Install Git LFS for the private model download; no personal access token is stored by the workstation.
@@ -104,6 +108,7 @@ For separate downloads, use `--weights` or `--sample`. The checkpoint is stored 
 | [Model card](docs/model-card.md) | Released weights, input preparation, labels, intended use |
 | [Sample data](docs/sample-data.md) | Public cine example, reference annotation, attribution |
 | [Development](docs/development.md) | Architecture, local development, tests, release checks |
+| [Release validation](docs/validation.md) | Tested installations, model equivalence, application and persistence checks |
 | [Contributing](CONTRIBUTING.md) | Bug reports and changes |
 | [Security](SECURITY.md) | Deployment boundary and reporting vulnerabilities |
 | [Changelog](CHANGELOG.md) | Versioned release notes |
