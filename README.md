@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/branding/cardiac-prism-logo-v1.png" alt="Cardiac Prism — a heart formed from prism facets" width="760">
+</p>
+
 # Cardiac-Prism Workstation
 
 **[Watch the tutorial · 6:55 (MP4)](docs/media/Cardiac-Prism-Tutorial.mp4)** · **[Read the illustrated user guide (PDF)](docs/media/Cardiac-Prism-User-Guide.pdf)**
