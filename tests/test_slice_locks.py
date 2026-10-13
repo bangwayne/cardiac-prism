@@ -257,8 +257,14 @@ class SliceLockTests(unittest.TestCase):
             # protection change to prove final publication revalidates targets.
             with self.project.lock:
                 self.project.locked_slices.add((0, 0))
-            self.predictor.release.set()
-            result = self.wait_job(result['id'])
+            with self.assertLogs('server.inference', level='ERROR') as logged:
+                self.predictor.release.set()
+                result = self.wait_job(result['id'])
+            message = ('All-layer inference task failed' if action == 'segment-all-layers'
+                       else 'All-time-frame inference failed')
+            self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                             [(message, 'Time frame 1, layer 1 is locked. '
+                               'Unlock this slice before changing its annotations.')])
             self.assertEqual(result['state'], 'failed', result)
             self.assert_masks(before)
             self.assertEqual(self.project.revision, revision)

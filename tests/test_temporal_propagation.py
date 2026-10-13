@@ -1,4 +1,5 @@
 """Temporal references, sparse transactions, and safe refinement; no CUDA needed."""
+from contextlib import nullcontext
 import threading
 import time
 import unittest
@@ -187,17 +188,22 @@ class TemporalPropagationTests(unittest.TestCase):
             self.predictor.fail = outcome == 'failed'
             self.predictor.entered.clear()
             self.predictor.release.clear()
-            job = self.post('propagate-time', **self.request())
-            self.assertTrue(self.predictor.entered.wait(5))
-            if outcome == 'cancelled':
-                self.client.post('/api/jobs/' + job['id'] + '/cancel').raise_for_status()
-                self.assertEqual(self.client.post('/api/model/device', json={'device': 'cpu'}).status_code, 400)
-            elif outcome == 'stale':
-                with self.project.lock:
-                    self.project.revision += 1
-            self.predictor.release.set()
-            self.assertEqual(self.wait_job(job['id'])['state'], outcome)
-            self.drain()
+            capture = self.assertLogs('server.propagation', level='ERROR') if outcome == 'failed' else nullcontext()
+            with capture as logged:
+                job = self.post('propagate-time', **self.request())
+                self.assertTrue(self.predictor.entered.wait(5))
+                if outcome == 'cancelled':
+                    self.client.post('/api/jobs/' + job['id'] + '/cancel').raise_for_status()
+                    self.assertEqual(self.client.post('/api/model/device', json={'device': 'cpu'}).status_code, 400)
+                elif outcome == 'stale':
+                    with self.project.lock:
+                        self.project.revision += 1
+                self.predictor.release.set()
+                self.assertEqual(self.wait_job(job['id'])['state'], outcome)
+                self.drain()
+            if outcome == 'failed':
+                self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                                 [('Temporal propagation failed', 'Deliberate reference test failure')])
             self.assert_masks(before)
             self.assertEqual(self.project.revision, revision + int(outcome == 'stale'))
 

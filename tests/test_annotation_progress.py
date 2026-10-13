@@ -126,7 +126,10 @@ class AnnotationProgressTests(unittest.TestCase):
 
     def test_failed_inference_does_not_record_annotation(self):
         before = self.progress(); self.predictor.fail = True
-        self.assertEqual(self.infer()['state'], 'failed')
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            self.assertEqual(self.infer()['state'], 'failed')
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Inference task failed', 'Deliberate test prediction failure')])
         self.assertEqual(self.progress(), before)
 
     def test_missing_legacy_history_is_explicitly_reported(self):

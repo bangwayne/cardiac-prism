@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { base, fixturePath, reportDirectory, browserOptions, assertIsolatedService } from './browser_helpers.mjs';
+import { saveDiagnosticScreenshot } from './browser_artifacts.mjs';
 const baseline = false;
 const out = reportDirectory('refinement');
 fs.mkdirSync(out, { recursive: true });
@@ -209,7 +210,7 @@ try {
       const expected = [0, 1, 2].flatMap(axis => [Math.min(...world.map(p => p[axis])), Math.max(...world.map(p => p[axis]))]);
       surface.bounds.forEach((v, axis) => assert(Math.abs(v - expected[axis]) < 1e-3, JSON.stringify({surface, expected})));
     }
-    await page.screenshot({ path: new URL('render-3d-fixture.png', out).pathname });
+    await saveDiagnosticScreenshot(page, { path: new URL('render-3d-fixture.png', out).pathname }, report);
   });
   await check('Surface opacity, organ visibility and background smoothing do not alter any mask', async () => {
     await value('3D mask opacity', .4);
@@ -292,13 +293,7 @@ try {
     await page.getByLabel('Unlock RV',{exact:true}).click();
     await expect(page.getByTestId('clear-all-masks-slice')).toBeEnabled();
   });
-  try {
-    await page.screenshot({ path: new URL('viewer.png', out).pathname, timeout: 60000 });
-  } catch (error) {
-    if (error.name !== 'TimeoutError' || page.isClosed()) throw error;
-    report.artifact_warning = `Viewer screenshot unavailable: ${error.message}`;
-    console.warn(report.artifact_warning);
-  }
+  await saveDiagnosticScreenshot(page, { path: new URL('viewer.png', out).pathname }, report);
   assert.deepEqual(report.errors, []); report.passed = true;
 } catch (error) {
   report.failure = error.stack; process.exitCode = 1;

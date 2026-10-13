@@ -115,7 +115,10 @@ class AllTimeFramesTests(unittest.TestCase):
                 raise RuntimeError('Second time frame failed')
             return original(image, *args)
         self.app.state.model.predictor = fail
-        result = self.run_all()
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.run_all()
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('All-time-frame inference failed', 'Second time frame failed')])
         self.assertEqual(result['state'], 'failed')
         self.assertEqual(result['completed_frames'], 1)
         self.assertEqual(self.project.revision, revision)
@@ -326,7 +329,10 @@ class AllTimeFramesTests(unittest.TestCase):
                 pass
 
         self.app.state.jobs.gpu_pool = Pool()
-        result = self.run_all(gpu_ids=[4, 5])
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.run_all(gpu_ids=[4, 5])
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('All-time-frame inference failed', 'GPU 4 model loading failed')])
         self.assertEqual(result['state'], 'failed', result)
         self.assertEqual(result['phase'], 'failed')
         self.assertIn('GPU 4 model loading failed', result['error'])
@@ -360,14 +366,21 @@ class AllTimeFramesTests(unittest.TestCase):
 
     def test_gpu_worker_failure_is_atomic(self):
         self.fake_pool(fail=True)
-        result = self.run_all(gpu_ids=[4, 5])
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.run_all(gpu_ids=[4, 5])
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('All-time-frame inference failed', 'GPU worker test failure')])
         self.assertEqual(result['state'], 'failed')
         self.assertEqual(self.project.revision, 0)
         self.assertFalse(any(mask.any() for mask in self.project.masks.values()))
 
     def test_mismatched_gpu_checkpoints_are_rejected(self):
         counters = self.fake_pool(mismatch=True)
-        result = self.run_all(gpu_ids=[4, 5])
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.run_all(gpu_ids=[4, 5])
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('All-time-frame inference failed',
+                           'GPU workers did not load the same checkpoint as the interactive model.')])
         self.assertEqual(result['state'], 'failed')
         self.assertEqual(counters['calls'], [])
         self.assertEqual(self.project.revision, 0)

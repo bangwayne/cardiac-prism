@@ -6,6 +6,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
 import { base, fixturePath, reportDirectory, browserOptions, assertIsolatedService } from './browser_helpers.mjs';
+import { saveDiagnosticScreenshot } from './browser_artifacts.mjs';
 import { fileURLToPath } from 'node:url';
 const output = fileURLToPath(reportDirectory('orientation-geometry'));
 const privateDir = output;
@@ -22,6 +23,7 @@ const report = { passed: false, checks: [], errors: [], study_id: study.id, isol
 const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 1920, height: 1400 } });
 page.on('pageerror', error => report.errors.push(error.stack || error.message));
+page.on('crash', () => report.errors.push('Browser page crashed'));
 const state = () => page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__?.state());
 const get = async route => { const response = await page.request.get(prefix + route); assert(response.ok(), await response.text()); return response; };
 const metadata = async () => (await get('')).json();
@@ -107,7 +109,7 @@ try {
     report.export = JSON.parse(result);
     assert.deepEqual((await metadata()).source_geometry, study.source_geometry);
   });
-  await page.screenshot({ path: path.join(output, 'geometry-candidate.png') });
+  await saveDiagnosticScreenshot(page, { path: path.join(output, 'geometry-candidate.png') }, report);
   assert.deepEqual(report.errors, []); report.passed = true;
 } catch (error) { report.failure = error.stack; process.exitCode = 1; await page.screenshot({ path: path.join(output, 'geometry-failure.png') }).catch(() => {}); }
 finally { fs.writeFileSync(path.join(output, 'geometry-browser.json'), JSON.stringify(report, null, 2) + '\n'); console.log(JSON.stringify(report)); await browser.close(); }

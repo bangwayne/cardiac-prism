@@ -87,12 +87,21 @@ try {
   const vite = start(process.execPath, [path.join(frontend, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1',
     '--port', String(uiPort), '--strictPort'], environment, 'vite', true, frontend);
   await waitReady(ui, vite);
-  for (const script of ['test_frame_archive.mjs', 'browser_refinement_controls.mjs', 'browser_orientation_pixels.mjs',
+  for (const script of ['test_browser_artifacts.mjs', 'test_frame_archive.mjs', 'browser_refinement_controls.mjs', 'browser_orientation_pixels.mjs',
     'browser_orientation_geometry.mjs', 'browser_surface_colors.mjs']) {
     console.log(`Running ${script}`);
     const started = Date.now();
-    await start(process.execPath, [path.join(root, 'tests', script)], environment, script).finished;
-    report.tests.push({ script, passed: true, seconds: (Date.now() - started) / 1000 });
+    const result = { script, passed: false, seconds: 0 };
+    report.tests.push(result);
+    try {
+      await start(process.execPath, [path.join(root, 'tests', script)], environment, script).finished;
+      result.passed = true;
+    } catch (error) {
+      result.failure = error.stack || String(error);
+      throw error;
+    } finally {
+      result.seconds = (Date.now() - started) / 1000;
+    }
   }
   report.passed = true;
 } catch (error) {

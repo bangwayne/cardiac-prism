@@ -20,7 +20,10 @@ class AnnotationOriginTests(unittest.TestCase):
 
     def test_failed_and_cancelled_propagation_add_no_current_or_historical_origin(self):
         self.predictor.fail = True
-        self.assertEqual(self.propagate(organs=[2])['state'], 'failed')
+        with self.assertLogs('server.propagation', level='ERROR') as logged:
+            self.assertEqual(self.propagate(organs=[2])['state'], 'failed')
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Temporal propagation failed', 'Deliberate reference test failure')])
         self.assertFalse(any(summary(self.project)['propagated_labels']))
         self.assertFalse(summary(self.project)['propagation_history'])
         self.predictor.fail = False

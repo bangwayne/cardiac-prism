@@ -378,7 +378,10 @@ class PlatformTests(unittest.TestCase):
                 raise RuntimeError('Second organ failed')
             return original(image, points, label, mode, prior, iteration)
         self.app.state.model.predictor = fail_second
-        result = self.wait_job(self.post('segment-all', time=0, slice=1)['id'])
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.wait_job(self.post('segment-all', time=0, slice=1)['id'])
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Inference task failed', 'Second organ failed')])
         self.assertEqual(result['state'], 'failed')
         self.assertEqual(self.project.revision, 0)
         self.assertFalse(any(mask.any() for mask in self.project.masks.values()))
@@ -464,7 +467,10 @@ class PlatformTests(unittest.TestCase):
                 raise RuntimeError('Third layer failed')
             return original(image, points, label, mode, prior, iteration)
         self.app.state.model.predictor = fail_late
-        result = self.wait_job(self.post('segment-all-layers', time=0)['id'])
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            result = self.wait_job(self.post('segment-all-layers', time=0)['id'])
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('All-layer inference task failed', 'Third layer failed')])
         self.assertEqual(result['state'], 'failed')
         self.assertEqual(result['completed_slices'], 2)
         self.assertEqual(self.project.revision, revision)
@@ -618,8 +624,10 @@ class PlatformTests(unittest.TestCase):
 
     def test_failed_inference_leaves_state_unchanged(self):
         self.predictor.fail = True
-        with self.assertLogs('server.inference', level='ERROR'):
+        with self.assertLogs('server.inference', level='ERROR') as logged:
             result = self.infer()
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Inference task failed', 'Deliberate test prediction failure')])
         self.assertEqual(result['state'], 'failed')
         self.assertFalse(self.project.masks[1].any())
         self.assertEqual(self.project.revision, 0)

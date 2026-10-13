@@ -175,7 +175,10 @@ class PropagationActivityTests(unittest.TestCase):
     def test_failed_and_cancelled_jobs_are_not_misrepresented_as_successful_propagation(self):
         before = activity(self.project)
         self.predictor.fail = True
-        self.assertEqual(self.propagate(organs=[2])['state'], 'failed')
+        with self.assertLogs('server.propagation', level='ERROR') as logged:
+            self.assertEqual(self.propagate(organs=[2])['state'], 'failed')
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Temporal propagation failed', 'Deliberate reference test failure')])
         self.assertEqual(activity(self.project), before)
         self.predictor.fail = False; self.predictor.block = True
         self.predictor.entered.clear(); self.predictor.release.clear()

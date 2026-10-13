@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { base, reportDirectory, browserOptions } from './browser_helpers.mjs';
+import { saveDiagnosticScreenshot } from './browser_artifacts.mjs';
 const baseline = false;
 const out = reportDirectory('surface-colors');
 fs.mkdirSync(out, { recursive: true });
@@ -10,6 +11,7 @@ const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 360, height: 360 } });
 const report = { passed: false, baseline, comparisons: [], identicalGeometry: [], errors: [] };
 page.on('pageerror', e => report.errors.push(e.stack || e.message));
+page.on('crash', () => report.errors.push('Browser page crashed'));
 const hash = pixels => crypto.createHash('sha256').update(Buffer.from(pixels)).digest('hex');
 const previous = !baseline && fs.existsSync(new URL('surface-colors-before.json', out))
   ? JSON.parse(fs.readFileSync(new URL('surface-colors-before.json', out))) : null;
@@ -52,7 +54,7 @@ try {
       assert(Math.abs(entry.meanBrightness - entry.reflectedBrightness) / entry.meanBrightness < .03, JSON.stringify(entry));
       assert(entry.meanColorDifference < 20, JSON.stringify(entry));
     }
-    if (color === 1 && side === 1) await page.screenshot({ path: new URL(`${baseline ? 'before' : 'after'}-${tilted ? 'oblique' : 'aligned'}-${smooth ? 'smooth' : 'exact'}.png`, out).pathname });
+    if (color === 1 && side === 1) await saveDiagnosticScreenshot(page, { path: new URL(`${baseline ? 'before' : 'after'}-${tilted ? 'oblique' : 'aligned'}-${smooth ? 'smooth' : 'exact'}.png`, out).pathname }, report);
   }
   if (!baseline) for (const tilted of [false, true]) for (const smooth of [false, true]) for (const color of [0, 1, 2]) {
     const options = { tilted, smooth, color, sameLocalGeometry: true };

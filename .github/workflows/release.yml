@@ -28,11 +28,11 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
     steps:
       - name: Check out release tooling
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           lfs: false
       - name: Check out selected source tag
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ env.RELEASE_TAG }}
           path: release-source
@@ -45,7 +45,7 @@ jobs:
           echo "model_ref=$model_ref" >> "$GITHUB_OUTPUT"
           echo "source_commit=$(git -C release-source rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Check out model checkpoint
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ steps.manifest.outputs.model_ref }}
           path: model-files

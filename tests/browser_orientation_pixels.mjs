@@ -4,12 +4,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import { base, fixturePath, reportDirectory, browserOptions, assertIsolatedService } from './browser_helpers.mjs';
+import { saveDiagnosticScreenshot } from './browser_artifacts.mjs';
 const output = reportDirectory('orientation-pixels');
 const fixtures = JSON.parse(fs.readFileSync(fixturePath('orientation', 'manifest.json'), 'utf8'));
 const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 1680, height: 1060 } });
 const report = { passed: false, base, checks: [], cases: [], errors: [] };
 page.on('pageerror', error => report.errors.push(error.stack || error.message));
+page.on('crash', () => report.errors.push('Browser page crashed'));
 const state = () => page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__.state());
 const intensity = ([x, y, z], t = 0) => 15 + Math.floor(x / 8) * 16 + Math.floor(y / 8) * 35 + Math.floor(z / 3) * 65 + t * 20;
 const position = [30, 21, 5];
@@ -90,7 +92,7 @@ try {
     await page.getByLabel('Time frame', { exact: true }).press('End');
     await expect.poll(async () => (await state()).time).toBe(1);
     await assertPixels(record, 1);
-    await page.screenshot({ path: new URL(fixture.name + '-grid.png', output).pathname });
+    await saveDiagnosticScreenshot(page, { path: new URL(fixture.name + '-grid.png', output).pathname }, report);
     report.checks.push(`${fixture.name}: all three rendered planes show the correct source voxels in both time frames`);
   }
   assert.deepEqual(report.errors, []);

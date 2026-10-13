@@ -1,5 +1,6 @@
 """Terminal inference results must release the study before clients can see them."""
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 import threading
 import unittest
 from unittest.mock import patch
@@ -51,7 +52,9 @@ class JobFinalizationTests(unittest.TestCase):
         # Pause the actual reservation release, after inference and any commit.
         # Previously a completed/failed/stale status was already observable at
         # this point, although the next edit still failed as "inference active".
-        with patch.object(type(project), '__setattr__', pause_reservation_release):
+        logger = 'server.propagation' if mode == 'propagation' else 'server.inference'
+        capture = self.assertLogs(logger, level='ERROR') if outcome == 'failed' else nullcontext()
+        with capture as logged, patch.object(type(project), '__setattr__', pause_reservation_release):
             try:
                 job = self.submit_mode(mode)
                 self.assertTrue(self.predictor.entered.wait(5))
@@ -88,6 +91,13 @@ class JobFinalizationTests(unittest.TestCase):
             following = self.infer(mode='organ')
             self.assertEqual(following['state'], 'completed', following)
             self.assertEqual(manager.active_tasks, 0)
+        if outcome == 'failed':
+            message = {'single': 'Inference task failed', 'all': 'Inference task failed',
+                       'layers': 'All-layer inference task failed', 'frames': 'All-time-frame inference failed',
+                       'propagation': 'Temporal propagation failed'}[mode]
+            self.assertEqual([(record.name, record.getMessage(), str(record.exc_info[1]))
+                              for record in logged.records],
+                             [(logger, message, 'Deliberate test prediction failure')])
 
     def test_single_slice_completed_failed_and_stale_are_ready_for_immediate_edit(self):
         for outcome in ('completed', 'failed', 'stale'):

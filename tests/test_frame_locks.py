@@ -297,8 +297,12 @@ class FrameLockTests(unittest.TestCase):
         before = self.masks()
         with self.project.lock:
             self.project.locked_slices.add((1, 1))
-        self.predictor.release.set()
-        self.assertEqual(self.wait_job(job['id'])['state'], 'failed')
+        with self.assertLogs('server.inference', level='ERROR') as logged:
+            self.predictor.release.set()
+            self.assertEqual(self.wait_job(job['id'])['state'], 'failed')
+        self.assertEqual([(record.getMessage(), str(record.exc_info[1])) for record in logged.records],
+                         [('Inference task failed', 'Time frame 2, layer 2 is locked. '
+                           'Unlock this slice before changing its annotations.')])
         self.assert_masks(before)
         self.assertEqual(self.project.undo_stack, [])
 
