@@ -70,7 +70,7 @@ export default function TemporalPropagation({ project, time, slice, progress, di
     {open && <div id={bodyId} className="propagation-body" role="region" aria-label="Time propagation settings">
       <div className="propagation-floating-heading"><strong>Propagate layer {slice + 1} in time</strong><button className="icon-button"
         aria-label="Close propagation settings" onClick={() => setOpen(false)}><X size={16} /></button></div>
-      <p className="propagation-intro">Choose well-segmented frames below. K-Prism uses their editable masks to predict the other time frames on <strong>layer {slice + 1}</strong>. Locked slices can be references and are always protected as targets.</p>
+      <p className="propagation-intro">Choose well-segmented frames below. Cardiac-Prism uses their editable masks to predict the other time frames on <strong>layer {slice + 1}</strong>. Locked slices can be references and are always protected as targets.</p>
       {completed && <div className="propagation-blocked" role="status">This study is marked complete. <button disabled={disabled} onClick={onReopen}>Reopen to propagate</button></div>}
       {playing && <div className="propagation-blocked" role="status">Pause cine to choose references or run propagation.</div>}
       {!modelReady && <div className="propagation-blocked" role="status">Waiting for the inference model to be ready.</div>}

@@ -122,7 +122,7 @@ def load_state(project, manifest):
 def save_state(project, schema_version, atomic_json, compression_level):
     """Freeze only dirty layers; atomically publish references after writing them."""
     if not 0 <= compression_level <= 9:
-        raise ValueError('KPRISM_SAVE_COMPRESSION_LEVEL must be between 0 and 9.')
+        raise ValueError('CARDIAC_PRISM_SAVE_COMPRESSION_LEVEL must be between 0 and 9.')
     with project.save_lock:
         with project.lock:
             if project.deleted:

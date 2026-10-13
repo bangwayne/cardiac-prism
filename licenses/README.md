@@ -4,7 +4,7 @@ The top-level [LICENSE](../LICENSE) contains the unmodified **PolyForm Noncommer
 
 | Component | License text | Upstream source |
 | --- | --- | --- |
-| Original Cardiac Prism workstation and released cardiac weights | [PolyForm Noncommercial 1.0.0](PolyForm-Noncommercial-1.0.0.md) | [Official license](https://polyformproject.org/licenses/noncommercial/1.0.0) |
+| Original Cardiac-Prism workstation and released cardiac weights | [PolyForm Noncommercial 1.0.0](PolyForm-Noncommercial-1.0.0.md) | [Official license](https://polyformproject.org/licenses/noncommercial/1.0.0) |
 | K-Prism model code | [MIT](K-Prism-MIT.txt) | [K-Prism](https://github.com/bangwayne/K-Prism) |
 | UTNet components | [MIT](UTNet-MIT.txt) | [UTNet](https://github.com/yhygao/UTNet) |
 | Swin Transformer components | [MIT](Swin-Transformer-MIT.txt) | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) |

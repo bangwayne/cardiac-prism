@@ -5,7 +5,7 @@ import torch
 from typing import Dict
 from detectron2.structures import ImageList
 import random
-from .Verse_model import Verse
+from .model import CardiacPrism
 from .modeling.loss import PointSampleLoss
 from .utils.point_sampler import PointSampler
 from .modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
@@ -14,7 +14,7 @@ from .modeling.point_encoder.point_feature_map_encoder import get_batch_point_fe
 log = logging.getLogger()
 
 
-class VerseTrainWrapper(Verse):
+class CardiacPrismTrainWrapper(CardiacPrism):
     def __init__(self, cfg):
         super().__init__(cfg)
 

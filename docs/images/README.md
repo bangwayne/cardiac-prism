@@ -1,6 +1,6 @@
 # Documentation images
 
-`workstation.png` shows the Cardiac Prism interface with the official ACDC patient
+`workstation.png` shows the Cardiac-Prism interface with the official ACDC patient
 001 end-diastolic volume and its expert reference labels imported as annotations.
 The 3D surface is a visualization of those reference labels, not a model prediction.
 

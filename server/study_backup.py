@@ -81,7 +81,7 @@ def import_backup(store, path):
                 raise ValueError('Choose a full study backup ZIP. Extract a mask-only ZIP and import its NIfTI masks separately.')
             description = json.loads(archive.read('backup.json'))
             if not isinstance(description, dict) or description.get('format') != FORMAT or description.get('version') != 1:
-                raise ValueError('Choose a K-Prism full study backup (.zip).')
+                raise ValueError('Choose a Cardiac-Prism full study backup (.zip).')
             expected = description['files']
             if not isinstance(expected, dict) or not all(isinstance(name, str) and isinstance(digest, str) and len(digest) == 64 for name, digest in expected.items()):
                 raise ValueError('Invalid study backup file inventory.')

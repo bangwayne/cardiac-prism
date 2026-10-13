@@ -25,8 +25,8 @@ def main():
     args = parser.parse_args()
     source = args.source_root.resolve()
     sys.path.insert(0, str(source))
-    os.environ['VERSE_DEVICE'] = args.device
-    os.environ['VERSE_CHECKPOINT'] = str(source / 'weight/cardiac_achilleas_epoch10.pth')
+    os.environ['CARDIAC_PRISM_DEVICE'] = args.device
+    os.environ['CARDIAC_PRISM_CHECKPOINT'] = str(source / 'weight/cardiac-prism-v0.1.pth')
     data = args.data_root or source / 'demo-data'
     import numpy as np
     import SimpleITK as sitk

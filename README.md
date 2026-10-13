@@ -1,8 +1,8 @@
-# Cardiac Prism Workstation
+# Cardiac-Prism Workstation
 
 A self-hosted workstation for viewing and refining cardiac MR segmentations. Open a 3D volume or 4D cine, inspect linked slice views, segment RV / MYO / LV, and refine the result with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
 
-![Cardiac Prism showing linked cardiac MR views and a 3D segmentation surface](docs/images/workstation.png)
+![Cardiac-Prism showing linked cardiac MR views and a 3D segmentation surface](docs/images/workstation.png)
 
 *ACDC end-diastolic volume with its imported expert reference annotation; this screenshot illustrates the workstation interface. [Data attribution and terms](docs/sample-data.md).*
 
@@ -97,7 +97,7 @@ python3 scripts/download_assets.py --all
 python3 scripts/download_assets.py --all --verify
 ```
 
-For separate downloads, use `--weights` or `--sample`. The checkpoint is stored under `weight/`; the public example is stored under `demo-data/`. Large assets are kept outside the main source branch. When a release asset is private, the downloader uses your existing authorized Git SSH access through Git LFS, pinned to the `models/v0.1.0` asset tag. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
+For separate downloads, use `--weights` or `--sample`. The checkpoint is stored as `weight/cardiac-prism-v0.1.pth`, with its matching JSON profile alongside it; the public example is stored under `demo-data/`. **Model weights are hosted on GitHub**, through Release assets and a separate Git LFS asset history. No Hugging Face account or model download is required. Large assets are kept outside the main source branch. When a release asset is private or unavailable, the downloader uses your existing authorized Git SSH access through Git LFS, pinned to the `models/v0.1.1` asset tag. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
 
 ## Documentation
 

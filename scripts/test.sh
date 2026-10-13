@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-KPRISM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KPRISM_PYTHON="${KPRISM_PYTHON:-$KPRISM_ROOT/.venv/bin/python}"
-cd "$KPRISM_ROOT"
-export PYTHONPATH="$KPRISM_ROOT${PYTHONPATH:+:$PYTHONPATH}"
+CARDIAC_PRISM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$CARDIAC_PRISM_ROOT/scripts/environment.sh"
+CARDIAC_PRISM_PYTHON="${CARDIAC_PRISM_PYTHON:-$CARDIAC_PRISM_ROOT/.venv/bin/python}"
+cd "$CARDIAC_PRISM_ROOT"
+export PYTHONPATH="$CARDIAC_PRISM_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 export PYTHONDONTWRITEBYTECODE=1
-KPRISM_TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/cardiac-prism-tests.XXXXXXXX")"
-trap 'rm -rf -- "$KPRISM_TEST_TMP"' EXIT
-export KPRISM_WORKSPACE="$KPRISM_TEST_TMP/workspace"
-export MPLCONFIGDIR="$KPRISM_TEST_TMP/matplotlib"
-export KPRISM_PRELOAD=0
-export VERSE_DEVICE=cpu
-"$KPRISM_PYTHON" -m unittest discover -s tests -p 'test_*.py' -v "$@"
+CARDIAC_PRISM_TEST_TMP="$(mktemp -d "${TMPDIR:-/tmp}/cardiac-prism-tests.XXXXXXXX")"
+trap 'rm -rf -- "$CARDIAC_PRISM_TEST_TMP"' EXIT
+export CARDIAC_PRISM_WORKSPACE="$CARDIAC_PRISM_TEST_TMP/workspace"
+export MPLCONFIGDIR="$CARDIAC_PRISM_TEST_TMP/matplotlib"
+export CARDIAC_PRISM_PRELOAD=0
+export CARDIAC_PRISM_DEVICE=cpu
+"$CARDIAC_PRISM_PYTHON" -m unittest discover -s tests -p 'test_*.py' -v "$@"
 

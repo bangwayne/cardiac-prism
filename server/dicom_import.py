@@ -46,7 +46,7 @@ class Instance:
 
 
 def converter_path():
-    path = Path(os.environ.get('KPRISM_DCM2NIIX',
+    path = Path(os.environ.get('CARDIAC_PRISM_DCM2NIIX',
                 ROOT / 'runtime/tools/dcm2niix-v1.0.20260724/dcm2niix'))
     if not path.is_file() or not os.access(path, os.X_OK):
         raise ConverterUnavailable('DICOM conversion is not installed on this server. Run scripts/setup-dicom.sh first.')

@@ -1,6 +1,6 @@
 {
-  "id": "cardiac-achilleas-epoch10",
-  "name": "Cardiac Prism cardiac segmentation v0.1",
+  "id": "cardiac-prism-v0.1",
+  "name": "Cardiac-Prism cardiac segmentation v0.1",
   "preprocessing": "mm_slice_p0_p98_256_v1",
   "epoch": 10,
   "query_mapping": {
@@ -9,7 +9,7 @@
     "LV": 18
   },
   "checkpoint_sha256": "2ba5f7c3a33e798ec5533184e0fe0fed7af4e565f0a5e8ae3bfb3a15a5f0e703",
-  "inference_transform": "verse_cfg_moe_original_test_v1",
+  "inference_transform": "cardiac_prism_moe_test_v1",
   "query_transform": "float_bilinear_resize_then_uint8_normalize_0.26_0.30",
   "reference_transform": "uint8_opencv_resize_then_normalize_0.26_0.30"
 }

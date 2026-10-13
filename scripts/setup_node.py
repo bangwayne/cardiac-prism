@@ -15,6 +15,34 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = '22.15.0'
 
 
+def extract_runtime(archive, directory):
+    """Extract files safely, then create npm's relative executable links.
+
+    Some Python 3.10 distribution backports resolve a symlink against the
+    archive root instead of its containing directory when using filter='data'.
+    Keeping links out of tarfile's extraction also makes that check explicit.
+    """
+    root = Path(directory).resolve()
+    files, links = [], []
+    for member in archive.getmembers():
+        name = Path(member.name)
+        if name.is_absolute() or '..' in name.parts or not (root / name).resolve().is_relative_to(root):
+            raise ValueError('Node.js archive contains an unsafe path.')
+        if member.issym():
+            links.append(member)
+        elif member.isfile() or member.isdir():
+            files.append(member)
+        else:
+            raise ValueError('Node.js archive contains an unsupported file type.')
+    archive.extractall(directory, members=files, filter='data')
+    for member in links:
+        destination = root / member.name
+        target = (destination.parent / member.linkname).resolve()
+        if Path(member.linkname).is_absolute() or not target.is_relative_to(root) or not target.is_file():
+            raise ValueError('Node.js archive contains an unsafe executable link.')
+        destination.symlink_to(member.linkname)
+
+
 def suitable(path):
     if not path:
         return False
@@ -48,7 +76,7 @@ def main():
     target.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=target.parent, prefix='.node-install-') as directory:
         with tarfile.open(fileobj=io.BytesIO(payload), mode='r:xz') as archive:
-            archive.extractall(directory, filter='data')
+            extract_runtime(archive, directory)
         unpacked = Path(directory) / f'node-v{VERSION}-linux-x64'
         if not suitable(unpacked / 'bin/node'):
             raise SystemExit('Downloaded Node.js cannot run on this server.')

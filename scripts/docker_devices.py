@@ -68,7 +68,7 @@ def main(explicit_bindings=None):
     if not requested:
         raise SystemExit('No GPUs selected. Use CPU mode or set NVIDIA_VISIBLE_DEVICES.')
     if explicit_bindings is None:
-        explicit_bindings = os.environ.get('KPRISM_DOCKER_DEVICE_BINDINGS') == '1'
+        explicit_bindings = os.environ.get('CARDIAC_PRISM_DOCKER_DEVICE_BINDINGS') == '1'
     paths = []
     reservation = {'driver': 'nvidia', 'capabilities': ['gpu']}
     if explicit_bindings:
@@ -83,9 +83,9 @@ def main(explicit_bindings=None):
             raise SystemExit('Use comma-separated physical GPU indices or complete GPU UUIDs.')
         reservation['device_ids'] = identifiers
     service = {
-        'image': 'cardiac-prism:0.1.0-cuda11.7',
+        'image': 'cardiac-prism:0.1.1-cuda11.7',
         'build': {'args': {'TORCH_VARIANT': 'cu117'}},
-        'environment': {'KPRISM_DEVICE': '${KPRISM_DEVICE:-cuda:0}',
+        'environment': {'CARDIAC_PRISM_DEVICE': '${CARDIAC_PRISM_DEVICE:-${KPRISM_DEVICE:-cuda:0}}',
                         'NVIDIA_VISIBLE_DEVICES': ','.join(identifiers),
                         'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility'},
         'deploy': {'resources': {'reservations': {'devices': [

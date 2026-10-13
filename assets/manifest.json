@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
-  "release": "v0.1.0",
+  "release": "v0.1.1",
   "assets": [
     {
       "id": "cardiac-model",
       "group": "weights",
-      "git_ref": "models/v0.1.0",
-      "path": "weight/cardiac_achilleas_epoch10.pth",
-      "url": "https://github.com/bangwayne/cardiac-prism/releases/download/v0.1.0/cardiac_achilleas_epoch10.pth",
+      "git_ref": "models/v0.1.1",
+      "path": "weight/cardiac-prism-v0.1.pth",
+      "url": "https://github.com/bangwayne/cardiac-prism/releases/download/v0.1.1/cardiac-prism-v0.1.pth",
       "size": 178498401,
       "sha256": "2ba5f7c3a33e798ec5533184e0fe0fed7af4e565f0a5e8ae3bfb3a15a5f0e703",
       "license": "PolyForm-Noncommercial-1.0.0",
-      "profile": "weight/cardiac_achilleas_epoch10.json"
+      "profile": "weight/cardiac-prism-v0.1.json"
     },
     {
       "id": "acdc-cine",

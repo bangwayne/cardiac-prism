@@ -2,7 +2,7 @@
 
 ## Architecture
 
-Cardiac Prism serves a static React/TypeScript frontend and a FastAPI API from one origin. Cornerstone3D renders linked image and label views; vtk.js builds on-demand mask surfaces. The server stores study files in an explicitly configured workspace and runs the K-Prism model locally.
+Cardiac-Prism serves a static React/TypeScript frontend and a FastAPI API from one origin. Cornerstone3D renders linked image and label views; vtk.js builds on-demand mask surfaces. The server stores study files in an explicitly configured workspace and runs the K-Prism model locally.
 
 | Path | Responsibility |
 | --- | --- |
@@ -13,7 +13,7 @@ Cardiac Prism serves a static React/TypeScript frontend and a FastAPI API from o
 | `server/cardiac_model.py` | Versioned cardiac preprocessing and checkpoint integration |
 | `server/propagation.py` | Same-layer temporal propagation |
 | `server/dicom_import.py` | Single-series DICOM validation and conversion |
-| `Verse_2_MOE_ui/` | Vendored model architecture and original upstream components |
+| `cardiac_prism/` | Vendored model architecture and original upstream components |
 | `scripts/` | Setup, asset acquisition, startup and verification tools |
 | `tests/` | Backend and browser regression tests |
 | `assets/` | Versioned asset metadata; large files are downloaded separately |
@@ -31,7 +31,7 @@ Install the native environment with development dependencies:
 Use `--device cuda` when testing real GPU inference. Avoid running development against an existing annotation workspace. From the repository root, start a separate instance:
 
 ```bash
-KPRISM_WORKSPACE="$PWD/workspace-dev" KPRISM_PORT=8507 ./start.sh
+CARDIAC_PRISM_WORKSPACE="$PWD/workspace-dev" CARDIAC_PRISM_PORT=8507 ./start.sh
 ```
 
 Build the frontend using the project-local Node runtime or a compatible installed version:
@@ -66,7 +66,7 @@ npm test
 
 The runner generates synthetic cine and orientation fixtures, starts temporary backend and frontend servers on unused loopback ports, and checks their workspace before creating studies. It covers editing, 4D playback, orientation pixels, source-space exports, surface colors, and lossless frame caching. It stops the temporary services and removes their study workspace when finished. Reports and screenshots remain under the ignored `test-results/` directory.
 
-The runner uses `.venv/bin/python` by default. Set `KPRISM_TEST_PYTHON` for a different installed environment, or `KPRISM_CHROMIUM_EXECUTABLE` to use an existing compatible Chrome/Chromium executable instead of Playwright's download. These are testing options, not workstation startup settings. Screenshots used in documentation must contain only redistributable or synthetic images.
+The runner uses `.venv/bin/python` by default. Set `CARDIAC_PRISM_TEST_PYTHON` for a different installed environment, or `CARDIAC_PRISM_CHROMIUM_EXECUTABLE` to use an existing compatible Chrome/Chromium executable instead of Playwright's download. These are testing options, not workstation startup settings. Screenshots used in documentation must contain only redistributable or synthetic images.
 
 For frontend changes, run TypeScript compilation and the relevant browser checks. For persistence changes, test both save/restart and full-backup export/import. For changes to inference, compare actual predictions and saved refinement context against the released model under the same preprocessing.
 

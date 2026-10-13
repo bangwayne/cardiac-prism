@@ -192,7 +192,7 @@ class DicomImportTests(unittest.TestCase):
             inspect_series([*self.paths, path])
 
     def test_missing_converter_is_clear(self):
-        with patch.dict(os.environ, KPRISM_DCM2NIIX=str(self.root / 'missing')):
+        with patch.dict(os.environ, CARDIAC_PRISM_DCM2NIIX=str(self.root / 'missing')):
             with self.assertRaisesRegex(ConverterUnavailable, 'setup-dicom.sh'):
                 converter_path()
 

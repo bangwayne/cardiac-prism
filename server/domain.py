@@ -458,7 +458,7 @@ class Project:
 
     def save(self):
         save_state(self, SCHEMA_VERSION, atomic_json,
-                   int(os.environ.get('KPRISM_SAVE_COMPRESSION_LEVEL', '1')))
+                   int(os.environ.get('CARDIAC_PRISM_SAVE_COMPRESSION_LEVEL', '1')))
 
     def nifti_bytes(self, array):
         scalar_array = array[0] if self.image.GetDimension() == 3 else array

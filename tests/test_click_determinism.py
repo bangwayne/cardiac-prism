@@ -5,7 +5,7 @@ Run from the repository root with::
     python -m unittest discover -s tests -p 'test_click_determinism.py' -v
 
 The small decoder exercises the actual click methods without requiring a GPU,
-a downloaded checkpoint, or the Streamlit application.
+a downloaded checkpoint, or a running workstation.
 """
 from __future__ import annotations
 
@@ -22,21 +22,21 @@ from omegaconf import OmegaConf
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from Verse_2_MOE_ui.api.segmentation_api import load_checkpoint_state
-from Verse_2_MOE_ui.inference.inference import _pack_user_point_tokens
-from Verse_2_MOE_ui.modeling.point_encoder.point_feature_map_encoder import (
+from cardiac_prism.api.segmentation_api import load_checkpoint_state
+from cardiac_prism.inference.inference import _pack_user_point_tokens
+from cardiac_prism.modeling.point_encoder.point_feature_map_encoder import (
     FeatureProjectionMLP, get_batch_point_feature_map, get_point_feature,
 )
-from Verse_2_MOE_ui.modeling.point_encoder.point_encoder import PromptEncoder
-from Verse_2_MOE_ui.modeling.transformer_decoder import transformer_decoder as decoder_module
-from Verse_2_MOE_ui.utils.point_sampler import PointSampler
+from cardiac_prism.modeling.point_encoder.point_encoder import PromptEncoder
+from cardiac_prism.modeling.transformer_decoder import transformer_decoder as decoder_module
+from cardiac_prism.utils.point_sampler import PointSampler
 
 
 CLICK_MODULES = ("point_embed_encoder", "click_feature_projection")
 
 
 def make_config(prompt_seed=0, decoder_layers=1):
-    cfg = OmegaConf.load(REPO_ROOT / "Verse_2_MOE_ui/config/model/base.yaml")
+    cfg = OmegaConf.load(REPO_ROOT / "cardiac_prism/config/model/base.yaml")
     cfg.model.transformer_decoder.in_channels = 32
     cfg.model.transformer_decoder.hidden_dim = 32
     cfg.model.transformer_decoder.mask_dim = 32
@@ -503,7 +503,7 @@ class ClickRegressionTests(unittest.TestCase):
         torch.random.default_generator.manual_seed(98765)
         second = make_decoder()
         for decoder in (first, second):
-            with self.assertLogs("Verse_2_MOE_ui.api.segmentation_api", level="WARNING"):
+            with self.assertLogs("cardiac_prism.api.segmentation_api", level="WARNING"):
                 report = load_checkpoint_state(decoder, legacy_state)
             self.assertEqual(set(report["legacy_prompt_modules"]), set(CLICK_MODULES))
             self.assertEqual(set(report["initialized_prompt_keys"]), {
@@ -527,7 +527,7 @@ class ClickRegressionTests(unittest.TestCase):
             if not key.startswith("click_feature_projection.")
         }
         restored = make_decoder(prompt_seed=3)
-        with self.assertLogs("Verse_2_MOE_ui.api.segmentation_api", level="WARNING"):
+        with self.assertLogs("cardiac_prism.api.segmentation_api", level="WARNING"):
             report = load_checkpoint_state(restored, state)
         self.assertEqual(report["legacy_prompt_modules"], ["click_feature_projection"])
         for key, value in source.point_embed_encoder.state_dict().items():

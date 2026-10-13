@@ -12,7 +12,7 @@ import numpy as np
 import SimpleITK as sitk
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CHECKPOINT = ROOT / 'weight/cardiac_achilleas_epoch10.pth'
+DEFAULT_CHECKPOINT = ROOT / 'weight/cardiac-prism-v0.1.pth'
 PROTOCOL = 'mm_slice_p0_p98_256_v1'
 MODEL_INPUT_RANGE = (-.26 / .30, (1. - .26) / .30)
 
@@ -27,7 +27,7 @@ def validate_prepared(values, dimensions=2):
 
 
 def checkpoint_path():
-    return Path(os.environ.get('VERSE_CHECKPOINT', DEFAULT_CHECKPOINT)).resolve()
+    return Path(os.environ.get('CARDIAC_PRISM_CHECKPOINT', DEFAULT_CHECKPOINT)).resolve()
 
 
 def model_profile():
@@ -112,7 +112,7 @@ def mask_prior(mask):
 
 
 def map_points(points, shape):
-    """Native -> ITK 256 -> original K-Prism scale-based click coordinates."""
+    """Native -> ITK 256 -> original Cardiac-Prism scale-based click coordinates."""
     height, width = shape
     return [(int(np.clip(round(p['y']*512/height), 0, 511)),
              int(np.clip(round(p['x']*512/width), 0, 511))) for p in points]
@@ -134,8 +134,8 @@ def restore_probability(logits, shape):
 def predict(api, plane, points, label, mode, prior, iteration):
     import torch
     import torch.nn.functional as F
-    from Verse_2_MOE_ui.inference.inference import _pack_user_point_tokens
-    from Verse_2_MOE_ui.modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
+    from cardiac_prism.inference.inference import _pack_user_point_tokens
+    from cardiac_prism.modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
     model = api._model
     image = image_tensor(plane.prepared).to(model.device)
     mapped = map_points(points, plane.shape)

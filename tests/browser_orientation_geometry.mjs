@@ -22,7 +22,7 @@ const report = { passed: false, checks: [], errors: [], study_id: study.id, isol
 const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 1920, height: 1400 } });
 page.on('pageerror', error => report.errors.push(error.stack || error.message));
-const state = () => page.evaluate(() => window.__KPRISM_DIAGNOSTICS__?.state());
+const state = () => page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__?.state());
 const get = async route => { const response = await page.request.get(prefix + route); assert(response.ok(), await response.text()); return response; };
 const metadata = async () => (await get('')).json();
 const masks = async t => new Uint8Array(await (await get('/masks?time=' + t)).body());
@@ -38,7 +38,7 @@ async function check(name, work) { await work(); report.checks.push(name); conso
 async function ready() { await expect(page.getByText('Viewer ready', { exact: true })).toBeVisible({ timeout: 120000 }); }
 async function idle() { await expect(page.getByTestId('segment-all')).toBeEnabled({ timeout: 30000 }); }
 async function clickIndex(name, index) {
-  const canvas = await page.evaluate(({ name, index }) => window.__KPRISM_DIAGNOSTICS__.indexToCanvas(name, index), { name, index });
+  const canvas = await page.evaluate(({ name, index }) => window.__CARDIAC_PRISM_DIAGNOSTICS__.indexToCanvas(name, index), { name, index });
   const box = await page.getByTestId('viewport-' + name).boundingBox();
   await page.mouse.click(box.x + canvas[0], box.y + canvas[1]);
 }
@@ -53,7 +53,7 @@ try {
     const cameras = d.sliceCameras.map(view => view.camera);
     [2, 1, 0].forEach((axis, view) => assert(Math.abs(Math.abs(dot(cameras[view].viewPlaneNormal, axes[axis])) - 1) < 1e-6));
     for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) assert(Math.abs(dot(cameras[i].viewPlaneNormal, cameras[j].viewPlaneNormal)) < 1e-6);
-    const observed = await page.evaluate(() => window.__KPRISM_DIAGNOSTICS__.indexToWorld([30, 21, 4]));
+    const observed = await page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__.indexToWorld([30, 21, 4]));
     close(observed, toWorld([30, 21, 4]));
     report.camera_normals = cameras.map(camera => camera.viewPlaneNormal);
     await expect(page.getByText('Y reconstruction', { exact: true })).toBeVisible();
@@ -101,7 +101,7 @@ try {
     fs.writeFileSync(outputPath, await (await get('/export?kind=labelmap')).body());
     const expectedPath = path.join(privateDir, 'orientation-export-expected.json');
     fs.writeFileSync(expectedPath, JSON.stringify({ geometry: study.source_geometry, voxel: report.brush_voxel_tzyx }));
-    const result = execFileSync(process.env.KPRISM_TEST_PYTHON || 'python3', ['-c',
+    const result = execFileSync(process.env.CARDIAC_PRISM_TEST_PYTHON || 'python3', ['-c',
       "import json,SimpleITK as s,numpy as n,sys; e=json.load(open(sys.argv[2]));i=s.ReadImage(sys.argv[1]);a=s.GetArrayFromImage(i);g=e['geometry'];assert list(i.GetSize())==g['size'];assert n.allclose(i.GetSpacing(),g['spacing'],atol=1e-5,rtol=0);assert n.allclose(i.GetOrigin(),g['origin'],atol=1e-5,rtol=0);assert n.allclose(i.GetDirection(),g['direction'],atol=1e-5,rtol=0);assert int(a[tuple(e['voxel'])])==2;assert int(n.count_nonzero(a))==1;print(json.dumps({'size':i.GetSize(),'positive_voxels':int(n.count_nonzero(a)),'native_voxel_exact':True}))",
       outputPath, expectedPath], { encoding: 'utf8' });
     report.export = JSON.parse(result);

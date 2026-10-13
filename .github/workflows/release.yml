@@ -2,63 +2,74 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing source version tag to publish or verify (for example v0.1.1)
+        required: true
+        type: string
 permissions:
   contents: read
+concurrency:
+  group: release-${{ inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
 jobs:
   checks:
     uses: ./.github/workflows/ci.yml
+    with:
+      source_ref: refs/tags/${{ inputs.release_tag || github.ref_name }}
   publish:
     needs: checks
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check out release tooling
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Check out selected source tag
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: models/${{ github.ref_name }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          path: release-source
+          persist-credentials: false
+      - name: Read and validate model revision
+        id: manifest
+        run: |
+          model_ref="$(python3 scripts/assemble_release.py --root release-source --tag "$RELEASE_TAG" --model-ref)"
+          echo "model_ref=$model_ref" >> "$GITHUB_OUTPUT"
+          echo "source_commit=$(git -C release-source rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Check out verified model assets
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: refs/tags/${{ steps.manifest.outputs.model_ref }}
           path: model-assets
           lfs: true
           persist-credentials: false
       - name: Assemble verified release assets
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          python3 - <<'PY'
-          import hashlib, json, os, pathlib, shutil
-          manifest = json.loads(pathlib.Path('assets/manifest.json').read_text())
-          assert manifest['release'] == os.environ['RELEASE_TAG']
-          output = pathlib.Path('release-assets'); output.mkdir()
-          for entry in manifest['assets']:
-              if entry['group'] != 'weights': continue
-              path = pathlib.Path('model-assets') / entry['path']
-              assert path.stat().st_size == entry['size']
-              assert hashlib.sha256(path.read_bytes()).hexdigest() == entry['sha256']
-              shutil.copyfile(path, output / path.name)
-              profile = pathlib.Path(entry['profile'])
-              assert json.loads(profile.read_text())['checkpoint_sha256'] == entry['sha256']
-              shutil.copyfile(profile, output / profile.name)
-          for source in ['LICENSE', 'NOTICE', 'docs/model-card.md', 'assets/manifest.json']:
-              shutil.copyfile(source, output / pathlib.Path(source).name)
-          (output / 'SHA256SUMS').write_text(''.join(
-              f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n'
-              for p in sorted(output.iterdir())))
-          PY
-      - name: Publish the repository release
+        run: python3 scripts/assemble_release.py --root release-source --tag "$RELEASE_TAG"
+      - name: Publish and verify the repository release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          gh release create "$RELEASE_TAG" release-assets/* --verify-tag \
-            --title "Cardiac Prism $RELEASE_TAG" --notes-file CHANGELOG.md
-          gh release view "$RELEASE_TAG" --json url,assets --jq '{url, assets: [.assets[].name]}'
+          GH_REPO: ${{ github.repository }}
+        run: bash scripts/publish_release.sh "$RELEASE_TAG" release-assets release-source/CHANGELOG.md
       - name: Record successful publication
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          SOURCE_COMMIT: ${{ steps.manifest.outputs.source_commit }}
         run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          gh_url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
-          git tag -a "published/$RELEASE_TAG" -m "Verified release assets published at $gh_url" "$GITHUB_SHA"
-          git push origin "refs/tags/published/$RELEASE_TAG"
+          marker="refs/tags/published/$RELEASE_TAG"
+          existing="$(git ls-remote origin "$marker")"
+          if [[ -n "$existing" ]]; then
+            git fetch origin "$marker:$marker"
+            test "$(git rev-parse "$marker^{commit}")" = "$SOURCE_COMMIT"
+            echo "Publication marker already matches the verified source."
+          else
+            git fetch origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            gh_url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
+            git tag -a "published/$RELEASE_TAG" -m "Verified release assets published at $gh_url" "$SOURCE_COMMIT"
+            git push origin "$marker"
+          fi

@@ -12,7 +12,7 @@ const resultsRoot = path.join(root, 'test-results');
 fs.mkdirSync(resultsRoot, { recursive: true });
 const output = fs.mkdtempSync(path.join(resultsRoot, 'browser-'));
 const workspace = path.join(output, 'workspace');
-const python = process.env.KPRISM_TEST_PYTHON ||
+const python = process.env.CARDIAC_PRISM_TEST_PYTHON ||
   (fs.existsSync(path.join(root, '.venv/bin/python')) ? path.join(root, '.venv/bin/python') : 'python3');
 const processes = new Set();
 const logs = [];
@@ -74,9 +74,9 @@ for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => {
 try {
   const apiPort = await freePort(), uiPort = await freePort();
   const api = `http://127.0.0.1:${apiPort}`, ui = `http://127.0.0.1:${uiPort}`;
-  const environment = { ...process.env, KPRISM_TEST_OUTPUT: output, KPRISM_TEST_WORKSPACE: workspace,
-    KPRISM_TEST_PYTHON: python, KPRISM_WORKSPACE: workspace, KPRISM_PRELOAD: '0', VERSE_DEVICE: 'cpu',
-    CUDA_VISIBLE_DEVICES: '', KPRISM_API_URL: api, KPRISM_URL: ui, OMP_NUM_THREADS: '2', MKL_NUM_THREADS: '2' };
+  const environment = { ...process.env, CARDIAC_PRISM_TEST_OUTPUT: output, CARDIAC_PRISM_TEST_WORKSPACE: workspace,
+    CARDIAC_PRISM_TEST_PYTHON: python, CARDIAC_PRISM_WORKSPACE: workspace, CARDIAC_PRISM_PRELOAD: '0', CARDIAC_PRISM_DEVICE: 'cpu',
+    CUDA_VISIBLE_DEVICES: '', CARDIAC_PRISM_API_URL: api, CARDIAC_PRISM_URL: ui, OMP_NUM_THREADS: '2', MKL_NUM_THREADS: '2' };
   for (const script of ['create_cine_fixture.py', 'make_orientation_fixtures.py']) {
     await start(python, [path.join(root, 'tests', script)], environment, script).finished;
   }

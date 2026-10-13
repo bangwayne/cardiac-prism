@@ -14,7 +14,7 @@ export default defineConfig({
     ],
   },
   server: {
-    proxy: { '/api': process.env.KPRISM_API_URL || 'http://127.0.0.1:8502' },
+    proxy: { '/api': process.env.CARDIAC_PRISM_API_URL || process.env.KPRISM_API_URL || 'http://127.0.0.1:8502' },
     headers: { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp' },
   },
   build: { target: 'es2022', chunkSizeWarningLimit: 1800 },

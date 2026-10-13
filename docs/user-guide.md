@@ -1,6 +1,6 @@
 # User guide
 
-Cardiac Prism combines image viewing, automated segmentation, and manual annotation in one browser window. This guide describes the controls in the released workstation. Install and connect using the [installation guide](install.md).
+Cardiac-Prism combines image viewing, automated segmentation, and manual annotation in one browser window. This guide describes the controls in the released workstation. Install and connect using the [installation guide](install.md).
 
 ## Start with the Library
 

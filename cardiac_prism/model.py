@@ -20,7 +20,7 @@ from .modeling.task_encoder.object_summarier import ObjectSummarizer
 # from .utils.memory_utils import UpsampleSupport
 
 
-class Verse(nn.Module):
+class CardiacPrism(nn.Module):
     """
     Main class for mask classification semantic segmentation architectures.
     """

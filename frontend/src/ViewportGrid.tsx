@@ -62,7 +62,7 @@ export default function ViewportGrid(props: Props) {
       if (!await medical.renderAndWait() || !active) return;
       setReady(true); current.onReady(medical);
       if (import.meta.env.DEV && new URLSearchParams(location.search).get('debug') === '1') {
-        Object.assign(window, { __KPRISM_DIAGNOSTICS__: Object.freeze({
+        Object.assign(window, { __CARDIAC_PRISM_DIAGNOSTICS__: Object.freeze({
           state: () => medical.diagnostics(),
           indexToCanvas: (name: ViewName, index: Index3) => medical.indexToCanvas(name, index),
           canvasToIndex: (name: ViewName, x: number, y: number) => medical.canvasToIndex(name, x, y),
@@ -77,7 +77,7 @@ export default function ViewportGrid(props: Props) {
     return () => {
       active = false; if (animation.current !== null) cancelAnimationFrame(animation.current);
       animation.current = null; medical.dispose(); viewer.current = null;
-      delete (window as Window & { __KPRISM_DIAGNOSTICS__?: unknown }).__KPRISM_DIAGNOSTICS__;
+      delete (window as Window & { __CARDIAC_PRISM_DIAGNOSTICS__?: unknown }).__CARDIAC_PRISM_DIAGNOSTICS__;
       latest.current.onReady(null);
     };
   }, [props.project.id]);

@@ -1,8 +1,22 @@
 # Release validation
 
-This record describes installation and behavior checks for version 0.1.0. It verifies software compatibility and preservation of model behavior; it is not an estimate of clinical segmentation accuracy.
+Version 0.1.1 standardizes the product, package, configuration, and asset names while retaining the same model checkpoint bytes. The checks below distinguish the current rename validation from the **0.1.0 installation baseline**. They verify software compatibility and preservation of model behavior; they are not an estimate of clinical segmentation accuracy.
 
-## Model equivalence
+## Version 0.1.1 rename checks
+
+- **272 backend tests** pass, in an isolated source-only copy, including legacy configuration compatibility, safe Node.js extraction, and resumable release publication.
+- Native CPU and NVIDIA Quadro RTX 6000 comparisons each exercise all 18 inference paths and compare 55 arrays with the corresponding same-hardware 0.1.0 baseline. Every array is exactly equal (maximum absolute difference 0). Checkpoint bytes and SHA-256 are unchanged.
+- TypeScript compilation and the production frontend build pass with the updated package name and application title.
+- All five browser suites pass using the renamed configuration and diagnostic interfaces. They cover refinement controls, shared cine navigation, physical orientation, source-space export, surface colors, and lossless frame caching.
+- A disposable CPU service loads the renamed checkpoint and opens the official ACDC end-diastolic example. Its imported expert labels display in all linked views and the on-demand 3D surface; saving succeeds. The production interface displays **Cardiac-Prism Workstation** and exposes no development diagnostic interface.
+- A rebuilt GPU Docker image on a separate NVIDIA Quadro RTX 6000 server also reproduces all 55 baseline arrays exactly. The documented GPU helper verifies the renamed assets, exposes only the selected GPU, opens the 30-frame ACDC cine, runs a real MYO prediction on the requested plane, and saves the study. The service reports version 0.1.1 and the renamed model.
+- The documentation screenshot was recaptured from the production build using the public ACDC example and reference annotation. GitHub Actions results must be checked separately in the repository; local and remote installation checks do not establish that its hosted workflow succeeded.
+
+- The renamed checkpoint also downloads successfully from the private GitHub model tag using existing Git SSH access and Git LFS, then passes its size and SHA-256 checks.
+
+## Version 0.1.0 installation baseline
+
+### Model equivalence
 
 The release checkpoint contains the same 1,016 model tensors as the workstation checkpoint used to prepare this release. Its file hash differs because private training-path metadata was removed from the checkpoint container. The release checksum and preprocessing profile are recorded in the [model card](model-card.md).
 
@@ -20,7 +34,7 @@ Each comparison uses the same hardware and input for the reference and release i
 
 The A100 Docker comparison also passes when CUDA visibility is specified by a single GPU UUID. Container checks verify that a requested GPU subset is actually exposed, rather than allowing every host GPU.
 
-## Application checks
+### Application checks
 
 - **259 backend tests** pass in an isolated release-only source copy without sibling repositories, downloaded weights, or sample data. They cover geometry, inference transactions, click determinism, GPU startup, container GPU selection, local locks, propagation, incremental state, notes, Library operations, activity, and backup restoration.
 - **Five browser suites** pass, covering image orientation, 3D surface appearance, editing and navigation controls, and frame-cache behavior.

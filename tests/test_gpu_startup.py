@@ -32,7 +32,7 @@ class GPUStartupTests(unittest.TestCase):
             import os
             _worker(connection, 3)
             self.assertEqual(os.environ['CUDA_VISIBLE_DEVICES'], 'GPU-example')
-            self.assertEqual(os.environ['VERSE_DEVICE'], 'cuda:0')
+            self.assertEqual(os.environ['CARDIAC_PRISM_DEVICE'], 'cuda:0')
             model.return_value.ensure_loaded.assert_called_once()
         connection.close.assert_called_once()
 

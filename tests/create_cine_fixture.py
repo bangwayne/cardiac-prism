@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import SimpleITK as sitk
 
-root = Path(os.environ.get('KPRISM_TEST_OUTPUT', 'test-results/browser')) / 'fixtures/cine'
+root = Path(os.environ.get('CARDIAC_PRISM_TEST_OUTPUT', 'test-results/browser')) / 'fixtures/cine'
 root.mkdir(parents=True, exist_ok=True)
 t, z, y, x = np.indices((6, 6, 64, 64))
 values = (t * 100 + z * 10 + y * .25 + x * .125).astype(np.float32)

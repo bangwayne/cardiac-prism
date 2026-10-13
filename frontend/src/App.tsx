@@ -805,7 +805,7 @@ export default function App() {
 
   return <div className="application">
     <header className="app-header">
-      <div className="brand" aria-label="Cardiac Prism work station"><img src="/prism.svg" alt="" /><strong>Cardiac Prism work station</strong></div>
+      <div className="brand" aria-label="Cardiac-Prism Workstation"><img src="/prism.svg" alt="" /><strong>Cardiac-Prism Workstation</strong></div>
       <div className="header-divider" />
       <button className="study-switcher" disabled={!!loading || editing || !!job || !!libraryAction} onClick={() => { pausePlayback(); setLibraryOpen(true); void api.studies().then(setStudies); }}>
         <FolderOpen size={16} /><span>{project ? project.name.replace('.nii.gz', '').replace('.nii', '') : 'Open study'}</span><ChevronDown size={13} />
@@ -909,7 +909,7 @@ export default function App() {
           onImport={(file, target, binaryOrgan) => void importAnnotation(file, target, binaryOrgan)} onExport={(kind) => void exportAnnotations(kind)} backupEnabled={!!health?.features?.study_lifecycle}
           onResolve={() => void edit('resolve-overlaps', { time, slice: position[2], priority: selected })} />
       </> : <main className="empty-workspace"><div className="empty-prism"><img src="/prism.svg" alt="" /></div>
-        <span className="eyebrow">K-PRISM IMAGING WORKSTATION</span><h1>From images to anatomy.</h1><p>A focused workspace for interactive cardiac segmentation.</p>
+        <span className="eyebrow">CARDIAC-PRISM WORKSTATION</span><h1>From images to anatomy.</h1><p>A focused workspace for interactive cardiac segmentation.</p>
         {loading ? <div className="empty-loading"><LoaderCircle className="spin" size={18} />{loading}</div> :
           <button className="primary-button" onClick={() => setLibraryOpen(true)}><FolderOpen size={17} /> Open a study</button>}
       </main>}

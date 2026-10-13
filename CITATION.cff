@@ -1,12 +1,12 @@
 cff-version: 1.2.0
 message: "If you use this workstation, cite this software and the K-Prism method. Cite ACDC separately when using its sample data."
 type: software
-title: "Cardiac Prism Workstation"
+title: "Cardiac-Prism Workstation"
 authors:
   - family-names: Guo
     given-names: Bangwei
-  - name: "Cardiac Prism contributors"
-version: 0.1.0
+  - name: "Cardiac-Prism contributors"
+version: 0.1.1
 url: "https://github.com/bangwayne/cardiac-prism"
 repository-code: "https://github.com/bangwayne/cardiac-prism"
 license: PolyForm-Noncommercial-1.0.0

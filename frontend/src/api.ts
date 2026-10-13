@@ -116,7 +116,7 @@ export const api = {
   },
   download: async (project: Project, kind: string) => {
     const response = await checked(await fetch(`/api/projects/${project.id}/export?kind=${kind}`));
-    const filename = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'K-Prism_export.zip';
+    const filename = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] ?? 'Cardiac-Prism_export.zip';
     const blob = await response.blob(); const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = filename;
     anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 30_000);

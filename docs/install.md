@@ -1,6 +1,6 @@
 # Installation and administration
 
-This guide installs a standalone Cardiac Prism server with the released cardiac model. All viewing, editing, and inference use your own server. A remote browser connects through an SSH tunnel or a suitably configured HTTPS reverse proxy.
+This guide installs a standalone Cardiac-Prism server with the released cardiac model. All viewing, editing, and inference use your own server. A remote browser connects through an SSH tunnel or a suitably configured HTTPS reverse proxy.
 
 ## 1. Choose an installation
 
@@ -36,10 +36,10 @@ cd cardiac-prism
 For a reproducible installation, select a published release tag instead of a moving development branch:
 
 ```bash
-git checkout v0.1.0
+git checkout v0.1.1
 ```
 
-The model and example are fetched separately. Their locations and SHA-256 values are pinned in the asset manifest. If a release download is unavailable because the repository is private, the downloader retrieves the selected asset through Git LFS at the pinned `models/v0.1.0` tag from the separate asset history. It uses the existing Git remote and SSH authentication; it does not require a token to be written to a configuration file. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
+The model and example are fetched separately. Their locations and SHA-256 values are pinned in the asset manifest. If a release download is unavailable because the repository is private, the downloader retrieves the selected asset through Git LFS at the pinned `models/v0.1.1` tag from the separate asset history. It uses the existing Git remote and SSH authentication; it does not require a token to be written to a configuration file. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
 
 ## 3. Install with Docker
 
@@ -102,7 +102,7 @@ Package names vary by distribution. On a server with Conda, an isolated Python b
 ```bash
 conda create -n cardiac-prism-bootstrap python=3.10 -y
 conda activate cardiac-prism-bootstrap
-KPRISM_BOOTSTRAP_PYTHON=python ./scripts/setup.sh --device cuda
+CARDIAC_PRISM_BOOTSTRAP_PYTHON=python ./scripts/setup.sh --device cuda
 ```
 
 Choose one setup command:
@@ -132,11 +132,11 @@ Keep the terminal open while using it. `Ctrl+C` stops the service. For longer se
 Native startup selects a GPU when available, otherwise CPU. To choose explicitly:
 
 ```bash
-KPRISM_DEVICE=cpu ./start.sh
+CARDIAC_PRISM_DEVICE=cpu ./start.sh
 ```
 
 ```bash
-KPRISM_DEVICE=cuda:0 ./start.sh
+CARDIAC_PRISM_DEVICE=cuda:0 ./start.sh
 ```
 
 The UI can switch among available devices while no inference job is running. **Segment all time frames** and temporal propagation can use several selected GPUs. Each selected GPU loads its own model, so the first job includes loading time. Results are applied only after the entire job succeeds; the progress panel shows preparation, prediction, and application phases.
@@ -145,21 +145,23 @@ The UI can switch among available devices while no inference job is running. **S
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
-| `KPRISM_HOST` | Listening address | `127.0.0.1` |
-| `KPRISM_PORT` | HTTP port | `8502` |
-| `KPRISM_DEVICE` | `auto`, `cpu`, or `cuda:N` | `auto` |
-| `KPRISM_WORKSPACE` | Persistent study and library directory | `workspace/` under the repository |
-| `KPRISM_PYTHON` | Interpreter used by `start.sh` | Project `.venv` Python |
-| `KPRISM_BOOTSTRAP_PYTHON` | Python used to create the environment | `python3.10` |
-| `KPRISM_VENV` | Environment directory created by setup | `.venv/` |
-| `KPRISM_DCM2NIIX` | Path to a separately installed DICOM converter | Project-local converter |
+| `CARDIAC_PRISM_HOST` | Listening address | `127.0.0.1` |
+| `CARDIAC_PRISM_PORT` | HTTP port | `8502` |
+| `CARDIAC_PRISM_DEVICE` | `auto`, `cpu`, or `cuda:N` | `auto` |
+| `CARDIAC_PRISM_CHECKPOINT` | Checkpoint file; keep its matching JSON profile alongside it | `weight/cardiac-prism-v0.1.pth` |
+| `CARDIAC_PRISM_CONFIG` | Model architecture and inference configuration | `cardiac_prism/config/eval_config.yaml` |
+| `CARDIAC_PRISM_WORKSPACE` | Persistent study and library directory | `workspace/` under the repository |
+| `CARDIAC_PRISM_PYTHON` | Interpreter used by `start.sh` | Project `.venv` Python |
+| `CARDIAC_PRISM_BOOTSTRAP_PYTHON` | Python used to create the environment | `python3.10` |
+| `CARDIAC_PRISM_VENV` | Environment directory created by setup | `.venv/` |
+| `CARDIAC_PRISM_DCM2NIIX` | Path to a separately installed DICOM converter | Project-local converter |
 
-If you create a nondefault environment with `KPRISM_VENV`, set `KPRISM_PYTHON` to that environment's Python when starting. Environment variables beginning with `KPRISM_` are retained for compatibility with the underlying model integration.
+If you create a nondefault environment with `CARDIAC_PRISM_VENV`, set `CARDIAC_PRISM_PYTHON` to that environment's Python when starting. Use the `CARDIAC_PRISM_` names for new configurations. Legacy `KPRISM_` settings remain accepted for existing installations, with the new name taking precedence when both are set; legacy `VERSE_DEVICE`, `VERSE_CONFIG`, and `VERSE_CHECKPOINT` map to `CARDIAC_PRISM_DEVICE`, `CARDIAC_PRISM_CONFIG`, and `CARDIAC_PRISM_CHECKPOINT`.
 
 Example with study storage on another disk:
 
 ```bash
-KPRISM_WORKSPACE=/data/cardiac-prism/studies KPRISM_PORT=8502 ./start.sh
+CARDIAC_PRISM_WORKSPACE=/data/cardiac-prism/studies CARDIAC_PRISM_PORT=8502 ./start.sh
 ```
 
 The service account must have read/write access to this directory. Run only one application process per workspace; this release is not a distributed database service. Do not add multiple Uvicorn workers against the same workspace.
@@ -225,7 +227,7 @@ python3 scripts/download_assets.py --all --verify
 The downloader validates pinned SHA-256 digests and avoids using an incomplete download as a completed asset. To use a copy of the exact released checkpoint already present on your server:
 
 ```bash
-python3 scripts/download_assets.py --weights-file /path/to/cardiac_achilleas_epoch10.pth
+python3 scripts/download_assets.py --weights-file /path/to/cardiac-prism-v0.1.pth
 ```
 
 This option validates the checkpoint against the release manifest; it is not a general checkpoint conversion tool. See the [model card](model-card.md) and [sample-data guide](sample-data.md).
@@ -272,10 +274,10 @@ For a reproducible issue, include the release version, installation method, brow
 
 ### NVIDIA container device access
 
-Some hosts have a [documented NVIDIA Container Toolkit/cgroup device-access issue](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html#containers-losing-access-to-gpus-with-error-failed-to-initialize-nvml-unknown-error). The host's `nvidia-smi` may work while a container reports an NVML error or cannot initialize CUDA. Cardiac Prism's helper offers explicit device bindings for this situation:
+Some hosts have a [documented NVIDIA Container Toolkit/cgroup device-access issue](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/troubleshooting.html#containers-losing-access-to-gpus-with-error-failed-to-initialize-nvml-unknown-error). The host's `nvidia-smi` may work while a container reports an NVML error or cannot initialize CUDA. Cardiac-Prism's helper offers explicit device bindings for this situation:
 
 ```bash
-KPRISM_DOCKER_DEVICE_BINDINGS=1 NVIDIA_VISIBLE_DEVICES=0,1 \
+CARDIAC_PRISM_DOCKER_DEVICE_BINDINGS=1 NVIDIA_VISIBLE_DEVICES=0,1 \
   ./scripts/docker.sh gpu up -d
 ```
 

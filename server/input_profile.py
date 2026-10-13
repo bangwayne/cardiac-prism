@@ -61,7 +61,7 @@ def build_input_profile(source_path, voxels, geometry=None, model=None):
         raise ValueError('The catalog prepared source has an incompatible shape or intensity range.')
     return {
         'schema_version': 1, 'protocol': protocol,
-        'model_id': model.get('id', 'legacy'), 'model_name': model.get('name', 'K-Prism original'),
+        'model_id': model.get('id', 'legacy'), 'model_name': model.get('name', 'Cardiac-Prism original'),
         'checkpoint_sha256': model.get('checkpoint_sha256'),
         'source_sha256': fingerprint, 'source_identity_verified': True,
         'input_state': 'trusted_prepared' if prepared and cardiac else 'raw',

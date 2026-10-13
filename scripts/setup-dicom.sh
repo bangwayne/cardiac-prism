@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Install the verified Linux x86-64 converter for DICOM folder import.
 set -euo pipefail
-KPRISM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KPRISM_PYTHON="${KPRISM_PYTHON:-$KPRISM_ROOT/.venv/bin/python}"
-if [[ ! -x "$KPRISM_PYTHON" ]]; then KPRISM_PYTHON=python3; fi
-"$KPRISM_PYTHON" - "$KPRISM_ROOT" <<'PY'
+CARDIAC_PRISM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$CARDIAC_PRISM_ROOT/scripts/environment.sh"
+CARDIAC_PRISM_PYTHON="${CARDIAC_PRISM_PYTHON:-$CARDIAC_PRISM_ROOT/.venv/bin/python}"
+if [[ ! -x "$CARDIAC_PRISM_PYTHON" ]]; then CARDIAC_PRISM_PYTHON=python3; fi
+"$CARDIAC_PRISM_PYTHON" - "$CARDIAC_PRISM_ROOT" <<'PY'
 import hashlib
 import io
 import os
@@ -26,7 +27,7 @@ if target.is_file() and hashlib.sha256(target.read_bytes()).hexdigest() == binar
     print('Verified dcm2niix ' + version + ': ' + str(target))
     raise SystemExit(0)
 if platform.system() != 'Linux' or platform.machine() not in ('x86_64', 'AMD64'):
-    raise SystemExit('Install dcm2niix for this server and set KPRISM_DCM2NIIX to its executable path.')
+    raise SystemExit('Install dcm2niix for this server and set CARDIAC_PRISM_DCM2NIIX to its executable path.')
 url = 'https://github.com/rordenlab/dcm2niix/releases/download/' + version + '/dcm2niix_lnx.zip'
 with urllib.request.urlopen(url, timeout=60) as response:
     payload = response.read(16 * 1024 * 1024 + 1)

@@ -2,7 +2,7 @@
 
 ## Deployment boundary
 
-Cardiac Prism is a self-hosted research workstation with no built-in login, per-user authorization, or tenant isolation. Everyone who can reach the API should be treated as a trusted user of the workspace. Editing locks and completion markers are workflow controls, not access controls.
+Cardiac-Prism is a self-hosted research workstation with no built-in login, per-user authorization, or tenant isolation. Everyone who can reach the API should be treated as a trusted user of the workspace. Editing locks and completion markers are workflow controls, not access controls.
 
 The default listener is `127.0.0.1`. For remote use, connect through an authenticated SSH tunnel. A shared network deployment needs an administrator-managed HTTPS and authentication gateway, appropriate firewall rules, and access restrictions on the study directory. Preserve the application's cross-origin isolation headers and same-origin API routing.
 

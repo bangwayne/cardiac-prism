@@ -8,7 +8,7 @@ import SimpleITK as sitk
 
 
 def main():
-    output = Path(os.environ.get('KPRISM_TEST_OUTPUT', 'test-results/browser')) / 'fixtures/orientation'
+    output = Path(os.environ.get('CARDIAC_PRISM_TEST_OUTPUT', 'test-results/browser')) / 'fixtures/orientation'
     output.mkdir(parents=True, exist_ok=True)
     # A fully oblique, reflected acquisition, rather than an in-plane rotation.
     scan = np.array([[.6762558, .27805029, -.68217745],

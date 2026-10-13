@@ -1,8 +1,7 @@
-"""SegmentationAPI — clean interface to the Verse/K-Prism MOE model.
+"""SegmentationAPI — clean interface to the Cardiac-Prism model.
 
 Encapsulates config loading, model loading (lazy), preprocessing,
-inference, and coordinate mapping.  app.py should call this instead
-of touching InferenceCore directly.
+inference, and coordinate mapping for the workstation backend.
 
 Coordinate convention
 ---------------------
@@ -102,18 +101,21 @@ def load_checkpoint_state(model: torch.nn.Module, state: Mapping) -> Dict:
 
 
 class SegmentationAPI:
-    """Wraps the Verse MOE model for interactive slice segmentation.
+    """Wraps the Cardiac-Prism model for interactive slice segmentation.
 
     Parameters
     ----------
     config_path:
         Path to ``eval_config.yaml``.  Can be overridden by the environment
-        variable ``VERSE_CONFIG``.
+        variable ``CARDIAC_PRISM_CONFIG``.
     """
 
     def __init__(self, config_path: str | Path, device: str | None = None) -> None:
-        self.config_path = Path(os.environ.get("VERSE_CONFIG", str(config_path)))
-        self.requested_device = device or os.environ.get("VERSE_DEVICE", "auto")
+        from server.environment import apply_legacy_environment
+
+        apply_legacy_environment()
+        self.config_path = Path(os.environ.get("CARDIAC_PRISM_CONFIG", str(config_path)))
+        self.requested_device = device or os.environ.get("CARDIAC_PRISM_DEVICE", "auto")
         self._model: Optional[object] = None
         self._cfg: Optional[object] = None
         self._preprocessor: Optional[object] = None
@@ -167,19 +169,13 @@ class SegmentationAPI:
         if self._model is not None:
             return
 
-        # Deferred imports to avoid loading torch/detectron2 at import time
-        import sys
-        pkg_root = str(Path(__file__).parent.parent.parent)
-        if pkg_root not in sys.path:
-            sys.path.insert(0, pkg_root)
-
-        from Verse_2_MOE_ui.inference.inference import InferenceCore
-        from Verse_2_MOE_ui.inference.resize_transform import SegmentationPreprocessor
+        from ..inference.inference import InferenceCore
+        from ..inference.resize_transform import SegmentationPreprocessor
 
         cfg = self._load_config()
 
-        resume_path = Path(os.environ.get("VERSE_CHECKPOINT", cfg.testing.resume))
-        if not resume_path.is_absolute() and 'VERSE_CHECKPOINT' not in os.environ:
+        resume_path = Path(os.environ.get("CARDIAC_PRISM_CHECKPOINT", cfg.testing.resume))
+        if not resume_path.is_absolute() and 'CARDIAC_PRISM_CHECKPOINT' not in os.environ:
             resume_path = (self.config_path.parent / resume_path).resolve()
         if not resume_path.exists():
             raise FileNotFoundError(f"Checkpoint not found: {resume_path}")
@@ -196,6 +192,7 @@ class SegmentationAPI:
         report = load_checkpoint_state(model, ckpt["model"])
         report["checkpoint_path"] = str(resume_path)
         report["click_prompt_seed"] = model.sem_seg_head.predictor.click_prompt_seed
+        # Serialized metadata key shared with existing checkpoints.
         report["model_profile"] = ckpt.get("kprism_ui", {})
         model.eval()
 

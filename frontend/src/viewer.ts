@@ -74,7 +74,7 @@ export class MedicalViewer {
   constructor(project: Project, onRender: () => void) {
     this.project = project;
     const suffix = `${project.id}-${++instance}`;
-    this.volumeId = `kprism:${suffix}`;
+    this.volumeId = `cardiac-prism:${suffix}`;
     this.viewIds = { native: `native-${suffix}`, coronal: `coronal-${suffix}`,
       sagittal: `sagittal-${suffix}`, volume: `volume-${suffix}` };
     this.groupId = `slice-tools-${suffix}`;

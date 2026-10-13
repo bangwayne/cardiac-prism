@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1
+
+- Standardize the application name as Cardiac-Prism Workstation across the interface, documentation, exports, and package metadata.
+- Package the model architecture under `cardiac_prism/` and rename the unchanged v0.1 checkpoint and profile to `cardiac-prism-v0.1.pth` and `cardiac-prism-v0.1.json`.
+- Use `CARDIAC_PRISM_` configuration names, retaining compatibility with existing environment settings and saved browser preferences.
+- Document GitHub-hosted model downloads through Release assets and the versioned Git LFS asset tag; no Hugging Face account is needed.
+- Resume interrupted GitHub Release drafts, verify uploaded attachments before publishing, and retain immutable source and model tags.
+- Fix Node.js installation on Ubuntu Python builds whose archive filter rejects npm executable links; validate and create those links separately.
+
 ## 0.1.0
 
 Initial packaged workstation release.

@@ -1,25 +1,29 @@
-# Cardiac segmentation model
+# Cardiac-Prism segmentation model
 
 ## Release identity
 
 | Field | Value |
 | --- | --- |
-| Model | Cardiac Prism cardiac segmentation v0.1 |
+| Model | Cardiac-Prism cardiac segmentation v0.1 |
 | Architecture | K-Prism mixture-of-experts interactive segmentation |
-| Checkpoint | `weight/cardiac_achilleas_epoch10.pth` |
-| Profile | `weight/cardiac_achilleas_epoch10.json` |
-| Release | `v0.1.0` |
+| Checkpoint | `weight/cardiac-prism-v0.1.pth` |
+| Profile | `weight/cardiac-prism-v0.1.json` |
+| Workstation release | `v0.1.1` |
 | File size | 178,498,401 bytes |
 | SHA-256 | `2ba5f7c3a33e798ec5533184e0fe0fed7af4e565f0a5e8ae3bfb3a15a5f0e703` |
 | License | [PolyForm Noncommercial 1.0.0](../LICENSE) |
 
 The release distributes the cardiac fine-tuned checkpoint used by this workstation.
 Its model tensors are unchanged; packaging removes private training-path metadata.
-The original filename is retained to preserve compatibility with existing configuration.
+Version 0.1.1 standardizes the checkpoint and profile filenames; the model remains
+version 0.1 and its checkpoint bytes and SHA-256 are unchanged from release 0.1.0.
 Keep the JSON profile next to the checkpoint; the profile selects the matching input
 transforms and query IDs. The download script checks the full checkpoint hash before
 installing it. Obtain the checkpoint from the release
-linked in the versioned [asset manifest](../assets/manifest.json).
+linked in the versioned [asset manifest](../assets/manifest.json). Weights are hosted
+on GitHub using Release assets and Git LFS; no Hugging Face account or model host is
+required. The architecture is packaged as `cardiac_prism/`; its upstream K-Prism
+attribution and license remain intact.
 
 ## Intended use
 
@@ -95,18 +99,18 @@ python3 scripts/download_assets.py --weights --verify
 
 While the repository is private, the release URL requires project access. If that
 URL is unavailable anonymously, the installer retrieves the same verified file from
-the repository's versioned `models/v0.1.0` tag using **Git LFS** and the Git credentials for
+the repository's versioned `models/v0.1.1` tag using **Git LFS** and the Git credentials for
 your clone's `origin`. Clone through an authorized GitHub account, install Git LFS,
 and keep that account's SSH or Git credential configuration available when running
 the installer. No token is written into the asset manifest. For Docker deployment,
 run asset setup on the host before starting the container.
 
 For a server without Internet access, download the checkpoint from the
-[v0.1.0 release](https://github.com/bangwayne/cardiac-prism/releases/tag/v0.1.0) on another
+[v0.1.1 release](https://github.com/bangwayne/cardiac-prism/releases/tag/v0.1.1) on another
 machine, copy it to the server, and run:
 
 ```bash
-python3 scripts/download_assets.py --weights-file /path/to/cardiac_achilleas_epoch10.pth
+python3 scripts/download_assets.py --weights-file /path/to/cardiac-prism-v0.1.pth
 ```
 
 The same size and SHA-256 checks apply to offline installation. The script preserves

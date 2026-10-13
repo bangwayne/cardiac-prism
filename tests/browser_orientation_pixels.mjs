@@ -10,14 +10,14 @@ const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 1680, height: 1060 } });
 const report = { passed: false, base, checks: [], cases: [], errors: [] };
 page.on('pageerror', error => report.errors.push(error.stack || error.message));
-const state = () => page.evaluate(() => window.__KPRISM_DIAGNOSTICS__.state());
+const state = () => page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__.state());
 const intensity = ([x, y, z], t = 0) => 15 + Math.floor(x / 8) * 16 + Math.floor(y / 8) * 35 + Math.floor(z / 3) * 65 + t * 20;
 const position = [30, 21, 5];
 const viewAxes = { native: 2, coronal: 1, sagittal: 0 };
 
 async function renderedSamples(view, indices, path) {
   const coordinates = await page.evaluate(({ view, indices }) => indices.map(index =>
-    window.__KPRISM_DIAGNOSTICS__.indexToCanvas(view, index)), { view, indices });
+    window.__CARDIAC_PRISM_DIAGNOSTICS__.indexToCanvas(view, index)), { view, indices });
   const viewport = page.getByTestId('viewport-' + view);
   const image = await viewport.screenshot({ path, style: '.viewport-overlay { visibility: hidden !important; }' });
   return page.evaluate(async ({ encoded, coordinates }) => {

@@ -76,7 +76,7 @@ class ModelService:
         # Built-in legacy examples were already prepared offline. Do not infer
         # preprocessing from a numeric range, or percentile-clip them twice.
         self.prepared_example_hashes = prepared_source_hashes()
-        self.requested_device = os.environ.get('VERSE_DEVICE', 'cpu')
+        self.requested_device = os.environ.get('CARDIAC_PRISM_DEVICE', 'cpu')
         self.features = OrderedDict()
         self.reference_features = OrderedDict()
         self.devices = None
@@ -137,9 +137,9 @@ class ModelService:
         self.loading = True
         try:
             import torch
-            from Verse_2_MOE_ui.api.segmentation_api import SegmentationAPI
-            torch.set_num_threads(max(1, int(os.environ.get('KPRISM_CPU_THREADS', '2'))))
-            api = SegmentationAPI(ROOT / 'Verse_2_MOE_ui/config/eval_config.yaml', device=self.requested_device)
+            from cardiac_prism.api.segmentation_api import SegmentationAPI
+            torch.set_num_threads(max(1, int(os.environ.get('CARDIAC_PRISM_CPU_THREADS', '2'))))
+            api = SegmentationAPI(ROOT / 'cardiac_prism/config/eval_config.yaml', device=self.requested_device)
             with contextlib.redirect_stdout(io.StringIO()):
                 api._ensure_loaded()
             original = api._model.backbone.forward
@@ -188,7 +188,7 @@ class ModelService:
                 self.api = None
                 raise ValueError('Checkpoint checksum does not match its preprocessing profile.')
             self.error = None
-            log.info('K-Prism model ready on %s', api._model.device)
+            log.info('Cardiac-Prism model ready on %s', api._model.device)
         except Exception as error:
             self.error = str(error)
             raise
@@ -261,7 +261,7 @@ class ModelService:
             'available_devices': self.available_devices(), 'hostname': socket.gethostname(),
             'error': self.error, 'feature_cache': self.cache_stats,
             'checkpoint': cardiac_model.checkpoint_path().name,
-            'model_name': self.profile.get('name', 'K-Prism original'),
+            'model_name': self.profile.get('name', 'Cardiac-Prism original'),
             'preprocessing': self.profile.get('preprocessing', 'legacy_ui_max_divide'),
             'source_checkpoint_sha256': self.profile.get('source_checkpoint_sha256'),
             'click_prompt_seed': 0,

@@ -141,7 +141,7 @@ class StudyCompletionRequest(StudyManagementRequest):
 
 
 def create_app(workspace=None, model=None):
-    directory = Path(workspace or os.environ.get('KPRISM_WORKSPACE', ROOT / 'workspace'))
+    directory = Path(workspace or os.environ.get('CARDIAC_PRISM_WORKSPACE', ROOT / 'workspace'))
     store = ProjectStore(directory / 'projects')
     notes = StudyNotesStore(store.directory)
     library = LibraryState(directory)
@@ -150,7 +150,7 @@ def create_app(workspace=None, model=None):
 
     @asynccontextmanager
     async def lifespan(application):
-        if os.environ.get('KPRISM_PRELOAD') == '1':
+        if os.environ.get('CARDIAC_PRISM_PRELOAD') == '1':
             service.ensure_loaded()
         yield
         manager.close()
@@ -161,13 +161,13 @@ def create_app(workspace=None, model=None):
                 except OSError:
                     log.exception('Could not save study %s during shutdown', project.id)
 
-    application = FastAPI(title='Cardiac Prism Workstation', version='0.1.0', lifespan=lifespan)
+    application = FastAPI(title='Cardiac-Prism Workstation', version='0.1.1', lifespan=lifespan)
     application.state.store = store
     application.state.model = service
     application.state.jobs = manager
-    gzip_level = int(os.environ.get('KPRISM_GZIP_LEVEL', '1'))
+    gzip_level = int(os.environ.get('CARDIAC_PRISM_GZIP_LEVEL', '1'))
     if not 0 <= gzip_level <= 9:
-        raise ValueError('KPRISM_GZIP_LEVEL must be between 0 and 9.')
+        raise ValueError('CARDIAC_PRISM_GZIP_LEVEL must be between 0 and 9.')
     # Float32 cine frames spend several seconds at the previous level 9.
     # Level 1 remains lossless and leaves CPU time for interactive rendering.
     application.add_middleware(GZipMiddleware, minimum_size=4096, compresslevel=gzip_level)
@@ -222,7 +222,7 @@ def create_app(workspace=None, model=None):
 
     @application.get('/api/health')
     def health():
-        return {'status': 'ok', 'model': service.status(), 'version': '0.1.0',
+        return {'status': 'ok', 'model': service.status(), 'version': '0.1.1',
                 'features': {'study_notes': True, 'study_lifecycle': True, 'study_management': True,
                              'annotation_progress': True, 'temporal_propagation': True, 'frame_locks': True,
                              'slice_locks': True, 'activity_history': True, 'dicom_import': True},
@@ -721,15 +721,15 @@ def create_app(workspace=None, model=None):
             if project.pending_job:
                 raise ValueError('Wait for inference before exporting a study backup.')
             path = create_backup(project)
-            return FileResponse(path, media_type='application/zip', filename='K-Prism_study_backup.zip',
+            return FileResponse(path, media_type='application/zip', filename='Cardiac-Prism_study_backup.zip',
                                 headers={'Content-Encoding': 'identity'},
                                 background=BackgroundTask(path.unlink, missing_ok=True))
         with project.lock:
             data, media_type, filename = project.export(kind)
             return Response(data, media_type=media_type,
-                            headers={'Content-Disposition': f'attachment; filename="K-Prism_{filename}"'})
+                            headers={'Content-Disposition': f'attachment; filename="Cardiac-Prism_{filename}"'})
 
-    frontend = Path(os.environ.get('KPRISM_FRONTEND_DIR', ROOT / 'frontend/dist')).resolve()
+    frontend = Path(os.environ.get('CARDIAC_PRISM_FRONTEND_DIR', ROOT / 'frontend/dist')).resolve()
     if frontend.exists():
         application.mount('/', StaticFiles(directory=frontend, html=True), name='workstation')
     return application

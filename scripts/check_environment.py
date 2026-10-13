@@ -31,7 +31,7 @@ def main():
         except importlib.metadata.PackageNotFoundError:
             errors.append(f'{name} is not installed.')
     for module in ('torchvision', 'SimpleITK', 'cv2', 'detectron2.layers',
-                   'Verse_2_MOE_ui.inference.inference', 'server.cardiac_model'):
+                   'cardiac_prism.inference.inference', 'server.cardiac_model'):
         try:
             importlib.import_module(module)
         except Exception as error:

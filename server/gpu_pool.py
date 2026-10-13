@@ -25,7 +25,7 @@ def gpu_inventory():
     for row in csv.reader(result.stdout.splitlines()):
         try:
             index, uuid, name, total, free, usage = (value.strip() for value in row)
-            available = int(free) >= int(os.environ.get('KPRISM_GPU_MIN_FREE_MIB', '8192'))
+            available = int(free) >= int(os.environ.get('CARDIAC_PRISM_GPU_MIN_FREE_MIB', '8192'))
             devices.append({'id': int(index), 'uuid': uuid, 'name': name,
                             'total_mib': int(total), 'free_mib': int(free), 'utilization': int(usage),
                             'available': available, 'reason': None if available else 'Insufficient free GPU memory'})
@@ -44,7 +44,7 @@ def _worker(connection, physical_id):
         connection.close()
         return
     os.environ['CUDA_VISIBLE_DEVICES'] = devices[physical_id]
-    os.environ['VERSE_DEVICE'] = 'cuda:0'
+    os.environ['CARDIAC_PRISM_DEVICE'] = 'cuda:0'
     from .inference import ModelService
     try:
         model = ModelService()

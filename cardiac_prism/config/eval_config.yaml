@@ -15,7 +15,7 @@ testing:
   num_nodes: 1
   work_dir: "runtime/model"
   # resume: None
-  resume: "../../weight/cardiac_achilleas_epoch10.pth"
+  resume: "../../weight/cardiac-prism-v0.1.pth"
   port: '9993'
   gpus: [0]
   init_method: "env://"

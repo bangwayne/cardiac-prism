@@ -1,6 +1,4 @@
 import logging
-import os
-import sys
 from omegaconf import DictConfig
 import numpy as np
 import torch
@@ -9,29 +7,9 @@ from torch.nn import functional as F
 from detectron2.structures import ImageList
 import random
 from .resize_transform import SegmentationPreprocessor
-# Ensure local package imports work when launched via streamlit script
-_HERE = os.path.abspath(os.path.dirname(__file__))
-_PKG_ROOT = os.path.abspath(os.path.join(_HERE, ".."))
-_PARENT_ROOT = os.path.abspath(os.path.join(_PKG_ROOT, ".."))
-for p in (_PKG_ROOT, _PARENT_ROOT):
-    if p not in sys.path:
-        sys.path.insert(0, p)
-
-try:
-    # package import
-    from Verse_2_MOE_ui.Verse_model import Verse
-    from Verse_2_MOE_ui.utils.point_sampler import PointSampler
-    from Verse_2_MOE_ui.modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
-except Exception:
-    try:
-        from ..Verse_model import Verse
-        from ..utils.point_sampler import PointSampler
-        from ..modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
-    except Exception:
-        # script fallback
-        from Verse_model import Verse
-        from utils.point_sampler import PointSampler
-        from modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
+from ..model import CardiacPrism
+from ..utils.point_sampler import PointSampler
+from ..modeling.point_encoder.point_feature_map_encoder import get_batch_point_feature_map
 
 log = logging.getLogger()
 
@@ -56,7 +34,7 @@ def _pack_user_point_tokens(pos_pts, neg_pts, device):
     return encode(pos_pts, 1), encode(neg_pts, 0)
 
 
-class InferenceCore(Verse):
+class InferenceCore(CardiacPrism):
     def __init__(self, cfg):
         super().__init__(cfg)
 
