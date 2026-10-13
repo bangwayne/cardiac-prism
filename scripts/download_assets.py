@@ -125,19 +125,20 @@ def import_private_weights(asset: dict, target: Path, repository: Path) -> None:
             return result.stdout.strip()
         except (OSError, subprocess.SubprocessError) as error:
             raise AssetError(
-                f"Private model download failed during {description}. Install Git LFS, verify that "
-                "your Git account can access this repository, and retry. Alternatively use "
-                "--weights-file with a checkpoint obtained from an authorized project maintainer."
+                f"Model download failed during {description}. Install Git LFS, verify the Git "
+                "remote and GitHub connectivity, and retry. Public HTTPS downloads need no "
+                "account; SSH remotes require a working SSH key. Alternatively use "
+                "--weights-file with the matching checkpoint from the GitHub Release."
             ) from error
 
     run(["git", "lfs", "version"], "Git LFS detection")
     remote = run(["git", "-C", str(repository), "remote", "get-url", "origin"], "repository discovery")
     if not remote or remote.startswith("-"):
-        raise AssetError("A valid Git origin is required to download private model assets.")
+        raise AssetError("A valid Git origin is required to download versioned model assets.")
     reference = asset.get("git_ref")
     if not isinstance(reference, str) or not reference or reference.startswith("-"):
         raise AssetError("A versioned model Git reference is required in the asset manifest.")
-    print("Release download requires repository access; using the authenticated model repository.", flush=True)
+    print("Release asset unavailable; retrieving the verified checkpoint from its versioned Git tag.", flush=True)
     with tempfile.TemporaryDirectory(prefix="cardiac-prism-model-") as directory:
         clone = Path(directory) / "repository"
         run(["git", "clone", "--quiet", "--depth", "1", "--single-branch", "--branch", reference,

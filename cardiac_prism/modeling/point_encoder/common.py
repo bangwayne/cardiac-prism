@@ -2,7 +2,7 @@
 # All rights reserved.
 
 # Adapted from Segment Anything. Licensed under Apache-2.0;
-# see licenses/Apache-2.0.txt in the distribution root.
+# see licenses/MODEL-COMPONENT-LICENSES.txt in the distribution root.
 
 import torch
 import torch.nn as nn

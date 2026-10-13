@@ -24,6 +24,11 @@ The separate 3D example is the official end-diastolic image, with dimensions
 not assigned an invented 30-frame reference mask: the distributed ACDC annotations
 cover selected cardiac phases, not every time point.
 
+Patient001 is part of the released model's ACDC fine-tuning training partition.
+Use this example to try the interface and annotation workflow. See
+[training data and fine-tuning](training-data.md) for the three datasets used by
+the released model and their split policy.
+
 | Installed path | Contents |
 | --- | --- |
 | `demo-data/images/patient001_4d.nii.gz` | Original 30-frame cine |

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Clarify that the released workstation and checkpoint support LV, RV, and MYO segmentation in cardiac cine MRI; link upstream K-Prism training and welcome community model/data integrations.
+- Document the ACDC, M&Ms, and M&Ms-2 fine-tuning cohort, split policy, label mapping, and training recipe.
+- Add the VerSe IPMI 2025 reference alongside K-Prism in the research citation instructions and machine-readable citation metadata.
+- Use public HTTPS installation instructions and consolidate upstream model component licenses into one file while preserving the original texts.
+
 ## 0.1.2
 
 - Keep application code and the single released cardiac checkpoint together on `main`; Git LFS stores the unchanged checkpoint.

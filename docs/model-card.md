@@ -28,10 +28,12 @@ attribution and license remain intact.
 
 ## Intended use
 
-Research annotation and interactive review of short-axis cardiac MR images. The model
-predicts the right ventricular cavity (RV), left ventricular myocardium (MYO), and left
-ventricular cavity (LV). It supports automatic segmentation, positive and negative
-clicks, and reference-based propagation. The workstation supports native 3D volumes
+Research annotation and interactive review of **cardiac cine MRI**. The current
+checkpoint and workstation support the right ventricular cavity (RV), left
+ventricular myocardium (MYO), and left ventricular cavity (LV). The training data
+include short-axis images and M&Ms-2 four-chamber images. It supports automatic
+segmentation, positive and negative clicks, and reference-based propagation.
+The workstation supports native 3D volumes
 and 4D cine images, but the model operates on individual 2D acquisition slices.
 
 | Export label | Structure | Model query |
@@ -71,9 +73,26 @@ different resize or normalization sequence.
 ## Training provenance and evaluation scope
 
 This is the project's epoch-10 cardiac fine-tuned checkpoint, based on
-[K-Prism](https://github.com/bangwayne/K-Prism). The release provides inference code,
-weights and preprocessing configuration. It does not include the original private
-training corpus or a complete training reproduction package.
+[K-Prism](https://github.com/bangwayne/K-Prism). Fine-tuning used expert ED/ES
+annotations from **ACDC, M&Ms, and M&Ms-2**: 780 training subjects, 2,280 annotated
+volumes, and 18,070 2D planes. The M&Ms-2 subset includes both short-axis and
+four-chamber views. ACDC patient101–150 were excluded from this fine-tuning run;
+all available annotated M&Ms and M&Ms-2 partitions were pooled for training.
+
+The final epoch was used without selecting an epoch on the ACDC test set.
+The initialization checkpoint's complete pretraining history is not established,
+so this split does not establish that ACDC test subjects were unseen during all
+earlier training. See [training data and fine-tuning](training-data.md) for the
+dataset sources, counts, split policy, label conversion, and recorded recipe.
+
+The release provides inference code, weights, and preprocessing configuration.
+The training datasets are obtained separately under their own terms. The
+workstation package is focused on inference and annotation; the
+[upstream K-Prism repository](https://github.com/bangwayne/K-Prism#training)
+provides the general training implementation and configurations. Fine-tuning on
+additional datasets and contributing compatible model integrations are welcome.
+New structures or modalities require corresponding adapter, label, profile, and
+interface changes and evaluation.
 
 Installation and release checks verify model loading, supported inference paths,
 result persistence and consistency with the supplied checkpoint. They do not establish
@@ -99,10 +118,11 @@ python3 scripts/download_assets.py --weights --verify
 ```
 
 The downloaded checkpoint is normally already present after cloning. The commands
-above verify it and recover a missing file. While the repository is private, GitHub
-downloads require project access. If the Release URL is unavailable anonymously,
-the installer retrieves the same verified file from the immutable `v0.1.2` source
-tag using **Git LFS** and the Git credentials for your clone's `origin`. No separate
+above verify it and recover a missing file. The repository and checkpoint are
+public; a GitHub account or token is not required for HTTPS downloads. If the
+Release URL is unavailable, the installer retrieves the same verified file from
+the immutable `v0.1.2` source
+tag using **Git LFS** and your clone's `origin`. No separate
 model branch is required. Earlier `models/v0.1.x` tags are retained for existing
 installations. No token is written into the asset manifest. For Docker deployment,
 run asset setup on the host before starting the container.
@@ -117,3 +137,11 @@ python3 scripts/download_assets.py --weights-file /path/to/cardiac-prism-v0.1.pt
 
 The same size and SHA-256 checks apply to offline installation. The script preserves
 an existing installed file if a replacement download fails verification.
+
+## Citation
+
+Please cite **K-Prism (ICLR 2026)** and **VerSe (IPMI 2025)** when using this
+workstation in research. Full references and BibTeX are in the
+[repository citation section](../README.md#acknowledgments-and-citation), with
+machine-readable metadata in [CITATION.cff](../CITATION.cff). Cite the relevant
+datasets separately when using their images or annotations.

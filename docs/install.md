@@ -18,7 +18,7 @@ The release uses a pinned PyTorch/CUDA stack. Installing a newer CUDA toolkit on
 
 ## 2. Download the source and model
 
-The repository is currently private. Ask the maintainer to grant your GitHub account access, configure that account's SSH key on the server, and install Git LFS. For a Debian/Ubuntu system, Git and Git LFS can be installed with:
+The repository and released checkpoint are public. HTTPS cloning does not require a GitHub account, SSH key, or access token. Install Git LFS before cloning. For a Debian/Ubuntu system, Git and Git LFS can be installed with:
 
 ```bash
 sudo apt-get update
@@ -26,10 +26,10 @@ sudo apt-get install -y git git-lfs
 git lfs install
 ```
 
-Check GitHub SSH authentication with `ssh -T git@github.com`. GitHub's successful authentication message states that shell access is unavailable; that is expected. Use an SSH clone so the asset downloader can reuse the same authorized access:
+Download the official installation branch:
 
 ```bash
-git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+git clone --branch main https://github.com/bangwayne/cardiac-prism.git
 cd cardiac-prism
 ```
 
@@ -41,11 +41,11 @@ git checkout v0.1.2
 
 The `main` branch and `v0.1.2` source tag contain both the application and the released model. Git LFS downloads `weight/cardiac-prism-v0.1.pth` during a normal clone; its matching JSON profile is tracked beside it. You do not need a second branch or repository. The public ACDC example is downloaded during setup. All asset sizes and SHA-256 values are pinned in the manifest.
 
-If cloning skipped the model download, run `git lfs pull` or `python3 scripts/download_assets.py --weights`. The downloader can use the GitHub Release or recover the same checkpoint through Git LFS at the immutable `v0.1.2` source tag. It reuses the existing Git remote and SSH authentication; no token needs to be written to a configuration file. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
+If cloning skipped the model download, run `git lfs pull` or `python3 scripts/download_assets.py --weights`. The downloader can use the GitHub Release or recover the same checkpoint through Git LFS at the immutable `v0.1.2` source tag. It reuses the existing Git remote; an HTTPS clone needs no credentials. SSH cloning is also supported if you already have a working GitHub SSH key. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
 
 ## 3. Install with Docker
 
-Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Compose plugin](https://docs.docker.com/compose/install/linux/) using the instructions for your distribution. The `docker` command must work for your account. The helper also needs Python 3.9 or later, Git LFS, and authorized GitHub SSH access on the host for private asset downloads. These credentials do not need to be copied into the container.
+Install [Docker Engine](https://docs.docker.com/engine/install/) and the [Compose plugin](https://docs.docker.com/compose/install/linux/) using the instructions for your distribution. The `docker` command must work for your account. The helper also needs Python 3.9 or later, Git LFS, and Internet access on the host for asset downloads.
 
 Keep a Docker installation and its persistent directories on a filesystem the Docker daemon can access. On shared research servers, home/project directories can be NFS mounts that deny the daemon access even though your account can read them. In that case, clone the project into an administrator-provisioned **local, durable** directory such as `/srv/projects/cardiac-prism`, or use the native installation. Do not keep production studies under `/tmp`, which can be cleaned automatically, and do not change broad home-directory permissions to work around a mount error.
 
@@ -269,7 +269,7 @@ Before upgrading, back up the workspace and read [CHANGELOG.md](../CHANGELOG.md)
 | An annotation will not import | Check dimensions, time dimension, origin, spacing, and direction against the source; matching pixel counts alone are insufficient. |
 | DICOM folder is rejected | Confirm it contains one uncompressed classic MR series with a consistent and complete frame/layer grid. See supported formats in the user guide. |
 | Download verification fails | Remove only the failed asset and retry the downloader. Do not disable digest verification. |
-| Private model download fails | Confirm your account has repository access, `ssh -T git@github.com` authenticates, `git lfs version` works, and `git remote -v` shows the authorized SSH remote. |
+| Model download fails | Confirm `git lfs version` works and the server can reach GitHub. Use the public HTTPS remote, then retry `git lfs pull` or the asset downloader; SSH remotes require a working SSH key. |
 | Editing is disabled | Pause playback, wait for a job, reopen a completed study if required, and inspect organ and slice locks. |
 
 For a reproducible issue, include the release version, installation method, browser, device type, and a de-identified error description. Avoid posting patient images, study backups, access tokens, or raw DICOM headers in public issues.

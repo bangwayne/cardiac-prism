@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this workstation, cite this software and the K-Prism method. Cite ACDC separately when using its sample data."
+message: "If you use Cardiac-Prism in research, please cite this software, K-Prism (ICLR 2026), and VerSe (IPMI 2025). Cite the relevant datasets separately when using their data."
 type: software
 title: "Cardiac-Prism Workstation"
 authors:
@@ -10,7 +10,7 @@ version: 0.1.2
 url: "https://github.com/bangwayne/cardiac-prism"
 repository-code: "https://github.com/bangwayne/cardiac-prism"
 license: PolyForm-Noncommercial-1.0.0
-abstract: "A self-hosted workstation for 3D and 4D cardiac MR viewing, interactive segmentation, temporal propagation, annotation refinement, and study management."
+abstract: "A self-hosted workstation for LV, RV, and MYO segmentation in cardiac cine MRI, with linked 3D and 4D viewing, interactive refinement, temporal propagation, and study management."
 keywords:
   - cardiac MRI
   - interactive segmentation
@@ -37,3 +37,26 @@ references:
     year: 2026
     collection-title: "The Fourteenth International Conference on Learning Representations"
     url: "https://openreview.net/forum?id=gvRf95K4im"
+  - type: conference-paper
+    title: "VerSe: Integrating Multiple Queries as Prompts for Versatile Cardiac MRI Segmentation"
+    authors:
+      - family-names: Guo
+        given-names: Bangwei
+      - family-names: Ye
+        given-names: Meng
+      - family-names: Gao
+        given-names: Yunhe
+      - family-names: Xin
+        given-names: Bingyu
+      - family-names: Axel
+        given-names: Leon
+      - family-names: Metaxas
+        given-names: Dimitris
+    year: 2025
+    collection-title: "Information Processing in Medical Imaging (IPMI 2025)"
+    collection-type: proceedings
+    volume: 15829
+    start: 373
+    end: 387
+    doi: "10.1007/978-3-031-96628-6_25"
+    url: "https://doi.org/10.1007/978-3-031-96628-6_25"

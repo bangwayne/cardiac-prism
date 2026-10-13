@@ -1,16 +1,14 @@
-# License inventory
+# Licenses and attribution
 
-The top-level [LICENSE](../LICENSE) contains the unmodified **PolyForm Noncommercial License 1.0.0**. [NOTICE](../NOTICE) defines its scope for original workstation code and the released checkpoint, and identifies separately licensed upstream components. Noncommercial source availability is distinct from an OSI-approved open-source license: the [Open Source Definition](https://opensource.org/osd) does not permit restrictions on commercial fields of use.
+The top-level [LICENSE](../LICENSE) contains **PolyForm Noncommercial 1.0.0** for original workstation code and the released cardiac checkpoint. [NOTICE](../NOTICE) defines its scope and identifies separately licensed components. The project is source-available for noncommercial use; this is not an OSI-approved open-source license.
 
-| Component | License text | Upstream source |
-| --- | --- | --- |
-| Original Cardiac-Prism workstation and released cardiac weights | [PolyForm Noncommercial 1.0.0](../LICENSE) | [Official license](https://polyformproject.org/licenses/noncommercial/1.0.0) |
-| K-Prism model code | [MIT](K-Prism-MIT.txt) | [K-Prism](https://github.com/bangwayne/K-Prism) |
-| UTNet components | [MIT](UTNet-MIT.txt) | [UTNet](https://github.com/yhygao/UTNet) |
-| Swin Transformer components | [MIT](Swin-Transformer-MIT.txt) | [Swin Transformer](https://github.com/microsoft/Swin-Transformer) |
-| Cutie components | [MIT](Cutie-MIT.txt) | [Cutie](https://github.com/hkchengrex/Cutie) |
-| Mask2Former components | [MIT](Mask2Former-MIT.txt) | [Mask2Former](https://github.com/facebookresearch/Mask2Former) |
-| Segment Anything, DETR, Detectron2, ConvNeXt components | [Apache 2.0](Apache-2.0.txt) | Repositories listed in [NOTICE](../NOTICE) |
-| ACDC sample | [Original data terms](ACDC-LICENSE-TERMS.md) and [mandatory citation](ACDC-MANDATORY-CITATION.md) | [ACDC](https://www.creatis.insa-lyon.fr/Challenge/acdc/) |
+| Material | Terms and notices |
+| --- | --- |
+| Original workstation code and released cardiac checkpoint | [LICENSE](../LICENSE) and [NOTICE](../NOTICE) |
+| Code incorporated into the segmentation model | [Consolidated model component licenses](MODEL-COMPONENT-LICENSES.txt): preserved MIT and Apache 2.0 texts and upstream sources |
+| Frontend dependencies | [Dependency notices](THIRD_PARTY_NOTICES.txt) |
+| Optional ACDC sample | [Original data terms](ACDC-LICENSE-TERMS.md) and [mandatory citation](ACDC-MANDATORY-CITATION.md) |
 
-Frontend dependency notices are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt). Installed packages and container components retain their own license files. The project's noncommercial license does not replace permissions already granted for upstream code or the sample data.
+Only one model checkpoint is distributed. Names such as UTNet, Cutie, and Mask2Former identify code components incorporated into that model, not separate models installed by the workstation. Their original license texts are collected in one file to keep the repository organized.
+
+Installed packages and container components retain their own license files. The project's noncommercial license does not replace the terms of upstream code or data. Full training datasets are obtained separately; their sources are listed in [training data and fine-tuning](../docs/training-data.md).

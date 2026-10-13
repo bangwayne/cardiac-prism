@@ -20,8 +20,8 @@ The following exclusions and attributions are part of this distribution:
    Source: https://github.com/bangwayne/K-Prism
    Copyright (c) 2025 bangwayne.
    The original K-Prism portions of cardiac_prism/ retain the MIT License,
-   reproduced in licenses/K-Prism-MIT.txt. The workstation adapter preserves
-   this model's architecture and includes changes for checkpoint loading,
+   reproduced in licenses/MODEL-COMPONENT-LICENSES.txt. The workstation adapter
+   preserves this model's architecture and includes changes for checkpoint loading,
    deterministic click features, and interactive inference. Components derived
    from the projects below retain their own copyright and license notices.
 
@@ -29,27 +29,28 @@ The following exclusions and attributions are part of this distribution:
    Source: https://github.com/yhygao/UTNet
    Copyright (c) 2021 yhygao.
    Adapted backbone code in cardiac_prism/modeling/backbone/ retains the MIT
-   License in licenses/UTNet-MIT.txt.
+   License in licenses/MODEL-COMPONENT-LICENSES.txt.
 
 3. Swin Transformer
    Source: https://github.com/microsoft/Swin-Transformer
    Copyright (c) Microsoft Corporation.
    Relative-position code acknowledged in
    cardiac_prism/modeling/backbone/conv_trans_utils.py derives from this project.
-   Its MIT License is reproduced in licenses/Swin-Transformer-MIT.txt.
+   Its MIT License is reproduced in licenses/MODEL-COMPONENT-LICENSES.txt.
 
 4. Cutie
    Source: https://github.com/hkchengrex/Cutie
    Copyright (c) 2024 Ho Kei Cheng.
    Object-summary and positional-encoding components in
    cardiac_prism/modeling/task_encoder/object_summarier.py include adapted
-   Cutie code. Its MIT License is reproduced in licenses/Cutie-MIT.txt.
+   Cutie code. Its MIT License is reproduced in
+   licenses/MODEL-COMPONENT-LICENSES.txt.
 
 5. Mask2Former
    Source: https://github.com/facebookresearch/Mask2Former
    Copyright (c) 2022 Meta, Inc.; Facebook, Inc. and its affiliates.
    Model-head and transformer-related portions retain their existing notices.
-   The MIT License is reproduced in licenses/Mask2Former-MIT.txt.
+   The MIT License is reproduced in licenses/MODEL-COMPONENT-LICENSES.txt.
 
 6. Segment Anything, DETR, Detectron2, and ConvNeXt
    Sources:
@@ -61,7 +62,8 @@ The following exclusions and attributions are part of this distribution:
    as identified in the individual source files.
    Adapted components include cardiac_prism/modeling/point_encoder/common.py
    and cardiac_prism/utils/misc.py. Their Apache License 2.0 is reproduced
-   in licenses/Apache-2.0.txt. Original notices remain in the source files.
+   in licenses/MODEL-COMPONENT-LICENSES.txt. Original notices remain in the
+   source files.
 
 7. Public ACDC sample data
    The optional sample download has separate terms and mandatory attribution.

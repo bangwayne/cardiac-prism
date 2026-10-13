@@ -1,6 +1,8 @@
 # Cardiac-Prism Workstation
 
-A self-hosted workstation for viewing and refining cardiac MR segmentations. Open a 3D volume or 4D cine, inspect linked slice views, segment RV / MYO / LV, and refine the result with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
+A self-hosted workstation for **cardiac cine MRI segmentation and annotation**. The current release supports three structures: **left ventricular cavity (LV), right ventricular cavity (RV), and left ventricular myocardium (MYO)**. Open a 3D cardiac volume or 4D cine, inspect linked slice views, and refine masks with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
+
+The released checkpoint and workstation are configured for these three cardiac structures. For the underlying model's broader segmentation modes, imaging modalities, and datasets, see [K-Prism](https://github.com/bangwayne/K-Prism). We welcome research fine-tuning and community contributions that extend the platform.
 
 ![Cardiac-Prism showing linked cardiac MR views and a 3D segmentation surface](docs/images/workstation.png)
 
@@ -8,7 +10,7 @@ A self-hosted workstation for viewing and refining cardiac MR segmentations. Ope
 
 **Source-available for noncommercial use.** The workstation and released cardiac model use [PolyForm Noncommercial 1.0.0](LICENSE). Academic research and other permitted noncommercial purposes are supported; commercial uses outside the license's permitted purposes require separate permission. Upstream components and public sample data retain their own licenses. See [NOTICE](NOTICE).
 
-The repository is currently distributed privately to authorized collaborators. Your GitHub account needs repository access and a working SSH key. Install Git LFS before cloning: the `main` branch contains both the application and its released checkpoint. No personal access token is stored by the workstation.
+The repository is public. Install Git LFS before cloning: the `main` branch contains both the application and its released checkpoint. HTTPS installation requires no GitHub account or access token.
 
 This is research software. Review predictions before using them in an analysis; the release is not a validated diagnostic product.
 
@@ -25,6 +27,20 @@ This is research software. Review predictions before using them in an analysis; 
 
 The model is **2D**: a click affects the current acquisition layer and time frame. Playback displays existing masks; propagation and whole-study segmentation are explicit actions.
 
+## Segmentation modes and fine-tuning
+
+The workstation builds on [K-Prism](https://github.com/bangwayne/K-Prism), a model that combines semantic knowledge, interactive prompts, and reference examples:
+
+| Mode | Workstation use |
+| --- | --- |
+| Automatic / semantic | Select LV, RV, or MYO and segment a slice, frame, or full cine. |
+| Interactive | Refine the selected structure with positive and negative clicks. Brush and eraser provide direct manual correction. |
+| Reference-based | Use annotated reference frames to propagate a structure through time on the same acquisition layer. |
+
+K-Prism's upstream research implementation supports segmentation across multiple medical imaging datasets and modalities. Researchers are welcome to fine-tune it on their own annotated data. Start with the [upstream training code and configurations](https://github.com/bangwayne/K-Prism#training). To integrate a checkpoint into this workstation, match its architecture, structure queries, label mapping, and preprocessing profile. Supporting additional organs or modalities also requires updating and testing the workstation adapter and controls; the supplied cardiac checkpoint is configured for LV / RV / MYO.
+
+The released cardiac checkpoint was fine-tuned with expert annotations from **ACDC, M&Ms, and M&Ms-2**: 780 training subjects and 2,280 annotated ED/ES volumes, including M&Ms-2 short-axis and four-chamber views. See [training data and fine-tuning](docs/training-data.md) for dataset sources, splits, label mapping, and the training recipe. The separately downloaded ACDC cine is an example for trying the interface.
+
 ## Quick start
 
 The supported server target is **Linux x86-64**. Use an NVIDIA GPU for interactive inference; a CPU installation is also available. On a Mac or Windows computer, use a browser to connect to the server.
@@ -35,7 +51,7 @@ Install Docker Engine with Compose and the [NVIDIA Container Toolkit](https://do
 
 ```bash
 git lfs install
-git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+git clone --branch main https://github.com/bangwayne/cardiac-prism.git
 cd cardiac-prism
 ./scripts/docker.sh gpu up --build -d
 ```
@@ -46,7 +62,7 @@ The clone retrieves the checkpoint through Git LFS. The helper verifies it, down
 
 ```bash
 git lfs install
-git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+git clone --branch main https://github.com/bangwayne/cardiac-prism.git
 cd cardiac-prism
 ./scripts/docker.sh cpu up --build -d
 ```
@@ -59,7 +75,7 @@ With Python 3.10, Git, and a C++ build toolchain installed:
 
 ```bash
 git lfs install
-git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+git clone --branch main https://github.com/bangwayne/cardiac-prism.git
 cd cardiac-prism
 ./scripts/setup.sh --device cuda
 ./start.sh
@@ -97,11 +113,13 @@ python3 scripts/download_assets.py --all
 python3 scripts/download_assets.py --all --verify
 ```
 
-For separate downloads, use `--weights` or `--sample`. The `main` branch includes `weight/cardiac-prism-v0.1.pth` through Git LFS, with its matching JSON profile alongside it. A normal clone with Git LFS installed retrieves the complete model. **Code and model weights are hosted on GitHub**; no Hugging Face account is needed. If the model was not downloaded during cloning, the installer can recover it from the GitHub Release or the immutable `v0.1.2` source tag using your authorized Git access.
+For separate downloads, use `--weights` or `--sample`. The `main` branch includes `weight/cardiac-prism-v0.1.pth` through Git LFS, with its matching JSON profile alongside it. A normal clone with Git LFS installed retrieves the complete model. **Code and model weights are hosted on GitHub**; no Hugging Face account is needed. If the model was not downloaded during cloning, the installer can recover it from the GitHub Release or the immutable `v0.1.2` source tag through Git LFS.
 
 The public example is downloaded separately under `demo-data/`. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
 
 ## Documentation
+
+Community contributions are welcome: bug reports, usability improvements, documentation, installation support, and reproducible model or dataset integrations. Open an [issue](https://github.com/bangwayne/cardiac-prism/issues) to discuss a proposed extension, or follow [Contributing](CONTRIBUTING.md) to submit code.
 
 Community contributions go through pull requests to `develop`, followed by
 maintainer review and automated tests. `main` remains the official installation
@@ -113,6 +131,7 @@ See [Contributing](CONTRIBUTING.md) for the fork workflow.
 | [Installation](docs/install.md) | Docker, native setup, CPU/GPU selection, remote access, persistence, upgrades, troubleshooting |
 | [User guide](docs/user-guide.md) | Input formats, views, editing, temporal propagation, locks, save and export |
 | [Model card](docs/model-card.md) | Released weights, input preparation, labels, intended use |
+| [Training data and fine-tuning](docs/training-data.md) | ACDC, M&Ms, M&Ms-2, training split and recipe, adapting the model |
 | [Sample data](docs/sample-data.md) | Public cine example, reference annotation, attribution |
 | [Development](docs/development.md) | Architecture, local development, tests, release checks |
 | [Release validation](docs/validation.md) | Tested installations, model equivalence, application and persistence checks |
@@ -122,10 +141,34 @@ See [Contributing](CONTRIBUTING.md) for the fork workflow.
 
 ## Acknowledgments and citation
 
-The segmentation engine builds on [K-Prism](https://github.com/bangwayne/K-Prism). The viewer uses Cornerstone3D and vtk.js. Upstream copyright and license notices are preserved in [NOTICE](NOTICE), [licenses/](licenses/), and [dependency notices](licenses/THIRD_PARTY_NOTICES.txt).
+The segmentation engine builds on [K-Prism](https://github.com/bangwayne/K-Prism) and the multi-query segmentation work introduced in [VerSe](https://doi.org/10.1007/978-3-031-96628-6_25). The viewer uses Cornerstone3D and vtk.js. Required upstream notices are collected in [licenses/](licenses/); these are component attributions within the supplied model and viewer.
 
-If you use the workstation in research, cite this repository and its release version using [CITATION.cff](CITATION.cff). Also cite the K-Prism method and ACDC when using the distributed example:
+If you use Cardiac-Prism in research, please cite **both K-Prism (ICLR 2026) and VerSe (IPMI 2025)**, and identify the workstation release using [CITATION.cff](CITATION.cff). Cite the relevant datasets when using their images or annotations.
 
 > Bangwei Guo et al. *K-Prism: A Knowledge-Guided and Prompt Integrated Universal Medical Image Segmentation Model*. ICLR, 2026. [Paper](https://openreview.net/forum?id=gvRf95K4im).
 
-ACDC citation details are provided with the [sample data](docs/sample-data.md).
+> Bangwei Guo, Meng Ye, Yunhe Gao, Bingyu Xin, Leon Axel, and Dimitris Metaxas. *VerSe: Integrating Multiple Queries as Prompts for Versatile Cardiac MRI Segmentation*. IPMI, 2025, pp. 373–387. [Paper](https://doi.org/10.1007/978-3-031-96628-6_25).
+
+```bibtex
+@inproceedings{guo2026kprism,
+  title = {K-Prism: A Knowledge-Guided and Prompt Integrated Universal Medical Image Segmentation Model},
+  author = {Guo, Bangwei and Gao, Yunhe and Ye, Meng and Gu, Difei and Zhou, Yang and Axel, Leon and Metaxas, Dimitris N.},
+  booktitle = {The Fourteenth International Conference on Learning Representations},
+  year = {2026},
+  url = {https://openreview.net/forum?id=gvRf95K4im}
+}
+
+@inproceedings{guo2025verse,
+  title = {VerSe: Integrating Multiple Queries as Prompts for Versatile Cardiac MRI Segmentation},
+  author = {Guo, Bangwei and Ye, Meng and Gao, Yunhe and Xin, Bingyu and Axel, Leon and Metaxas, Dimitris},
+  booktitle = {Information Processing in Medical Imaging},
+  series = {Lecture Notes in Computer Science},
+  volume = {15829},
+  pages = {373--387},
+  year = {2025},
+  publisher = {Springer},
+  doi = {10.1007/978-3-031-96628-6_25}
+}
+```
+
+Dataset attribution and access details are provided with the [training data](docs/training-data.md) and [ACDC example](docs/sample-data.md).

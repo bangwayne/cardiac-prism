@@ -1,6 +1,6 @@
 # Contributing
 
-Contributions that improve annotation reliability, installation, usability, and reproducible research are welcome. Read the [user guide](docs/user-guide.md) and [development guide](docs/development.md) before changing behavior.
+Community contributions that improve annotation reliability, installation, usability, documentation, and reproducible research are welcome. The current release segments LV, RV, and MYO in cardiac cine MRI. We also welcome proposals for fine-tuned models and additional datasets or segmentation tasks; discuss the intended scope in an issue and include the corresponding preprocessing, label mapping, evaluation, and data/model provenance. See [training data and fine-tuning](docs/training-data.md), the [user guide](docs/user-guide.md), and the [development guide](docs/development.md) before changing behavior.
 
 ## Report an issue
 
@@ -15,8 +15,8 @@ Do not attach identifiable patient data, raw clinical DICOM headers, access cred
 `develop`; they are promoted to `main` only when the maintainer chooses. There is
 no automatic merge or deployment from `develop`.
 
-1. Fork the repository into your own account. While this repository is private,
-   authorized access and repository forking permissions are required.
+1. Fork the public repository into your own account. Repository write access is
+   not required to submit a contribution.
 2. Create a focused feature branch from the upstream `develop` branch.
 3. Preserve original spatial geometry, frame/layer scope, and lock protection.
 4. Run the checks relevant to the change. Explain test coverage and remaining limitations in the pull request.
@@ -28,7 +28,7 @@ no automatic merge or deployment from `develop`.
 For an existing clone of your fork:
 
 ```bash
-git remote add upstream git@github.com:bangwayne/cardiac-prism.git
+git remote add upstream https://github.com/bangwayne/cardiac-prism.git
 git fetch upstream develop
 git switch -c fix/short-description upstream/develop
 # Make and validate your change.
