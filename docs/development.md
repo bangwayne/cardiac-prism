@@ -26,9 +26,14 @@ Source-image and export geometry remain in the original grid. Model tensors are 
 For code-only work, skip the model download when cloning:
 
 ```bash
-GIT_LFS_SKIP_SMUDGE=1 git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+GIT_LFS_SKIP_SMUDGE=1 git clone --branch develop git@github.com:bangwayne/cardiac-prism.git
 cd cardiac-prism
 ```
+
+Community feature branches start from `develop`; submit their pull requests to
+`develop` in the official repository. Fork-based contribution steps and
+maintainer review rules are in [Contributing](../CONTRIBUTING.md). Installations
+and releases continue to use `main` or a selected release tag.
 
 Use `./scripts/setup.sh --device cpu --dev --skip-assets` to prepare tests without
 model or sample downloads. When real inference is needed, run

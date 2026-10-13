@@ -1,8 +1,9 @@
 name: Tests
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
+    branches: [main, develop]
   workflow_call:
     inputs:
       source_ref:
@@ -13,7 +14,28 @@ on:
 permissions:
   contents: read
 jobs:
+  contribution-policy:
+    name: Contribution policy
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check pull request destination
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_BRANCH: ${{ github.base_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" || "$BASE_BRANCH" == "develop" ]]; then
+            exit 0
+          fi
+          if [[ "$BASE_BRANCH" == "main" && "$PR_AUTHOR" == "bangwayne" && "$HEAD_REPOSITORY" == "bangwayne/cardiac-prism" ]]; then
+            exit 0
+          fi
+          echo "::error::Community pull requests must target develop. Only the maintainer promotes changes to main."
+          exit 1
   workstation:
+    needs: contribution-policy
     runs-on: ubuntu-22.04
     timeout-minutes: 35
     steps:

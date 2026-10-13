@@ -103,6 +103,11 @@ The public example is downloaded separately under `demo-data/`. The [model card]
 
 ## Documentation
 
+Community contributions go through pull requests to `develop`, followed by
+maintainer review and automated tests. `main` remains the official installation
+and release branch; the maintainer selects when reviewed changes are promoted.
+See [Contributing](CONTRIBUTING.md) for the fork workflow.
+
 | Guide | Contents |
 | --- | --- |
 | [Installation](docs/install.md) | Docker, native setup, CPU/GPU selection, remote access, persistence, upgrades, troubleshooting |

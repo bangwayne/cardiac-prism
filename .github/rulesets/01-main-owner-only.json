@@ -1,0 +1,24 @@
+{
+  "name": "Main - owner updates only",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [
+    {
+      "actor_id": 192292443,
+      "actor_type": "User",
+      "bypass_mode": "always"
+    }
+  ],
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/main"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "update",
+      "parameters": {"update_allows_fetch_and_merge": false}
+    }
+  ]
+}
