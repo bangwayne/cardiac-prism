@@ -8,6 +8,8 @@
 - Document GitHub-hosted model downloads through Release assets and the versioned Git LFS asset tag; no Hugging Face account is needed.
 - Resume interrupted GitHub Release drafts, verify uploaded attachments before publishing, and retain immutable source and model tags.
 - Fix Node.js installation on Ubuntu Python builds whose archive filter rejects npm executable links; validate and create those links separately.
+- Publish inference and propagation results only after releasing the study's editing reservation, so immediate edits or undo no longer race with task completion. Preserve safe cancellation when a new task is queued.
+- Make browser checks tolerate slower software rendering while still checking every cine frame and exact image/mask values; bound test-only CPU thread usage on small runners.
 
 ## 0.1.0
 

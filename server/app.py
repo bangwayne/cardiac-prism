@@ -418,9 +418,9 @@ def create_app(workspace=None, model=None):
 
     @application.post('/api/jobs/{job_id}/cancel')
     def cancel(job_id: str):
-        result = manager.cancel(job_id)
-        project = store.get(result['project_id'])
-        with project.lock:
+        project = store.get(manager.get(job_id)['project_id'])
+        with project.lock, manager.lock:
+            result = manager.cancel(job_id)
             if project.pending_job == job_id:
                 project.pending_job = None
         return result

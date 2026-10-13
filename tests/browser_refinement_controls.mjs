@@ -11,6 +11,7 @@ const browser = await chromium.launch(browserOptions);
 const page = await browser.newPage({ viewport: { width: 1680, height: 1060 } });
 const report = { passed: false, baseline, checks: [], errors: [], desynchronisations: [], requests: [] };
 page.on('pageerror', error => report.errors.push(error.stack || error.message));
+page.on('crash', () => report.errors.push('Browser page crashed'));
 page.on('request', request => { if (request.method() === 'GET' && /\/api\/projects\/[^/]+\/(volume|masks)/.test(request.url())) report.requests.push(request.url()); });
 const state = () => page.evaluate(() => window.__CARDIAC_PRISM_DIAGNOSTICS__?.state());
 async function check(name, work) { await work(); report.checks.push(name); console.log('PASS', name); }
@@ -23,7 +24,7 @@ async function value(label, next) {
 async function jump(time) {
   await value('Time frame', time);
   await expect.poll(async () => (await state())?.time, { timeout: 30000 }).toBe(time);
-  await expect(page.getByRole('button', { name: 'Play cine', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Play cine', exact: true })).toBeEnabled({ timeout: 30000 });
 }
 async function errorsAtPosition(position) {
   return page.evaluate(index => {
@@ -179,8 +180,13 @@ try {
   await page.getByRole('button', { name: 'Play cine', exact: true }).click();
   await expect.poll(async () => (await state()).time, { timeout: 30000, intervals: [30] }).not.toBe(initialTime);
   report.start_to_first_frame_ms = Math.round(performance.now() - play);
-  const samples = [], until = performance.now() + 6000;
-  while (performance.now() < until) { samples.push({ time: (await state()).time, at: performance.now() }); await page.waitForTimeout(25); }
+  const samples = [], seenFrames = new Set(), observationStart = performance.now();
+  const minimumEnd = observationStart + 6000, deadline = observationStart + 30000;
+  while (performance.now() < deadline && (performance.now() < minimumEnd || seenFrames.size < 6)) {
+    const sample = { time: (await state()).time, at: performance.now() };
+    samples.push(sample); seenFrames.add(sample.time);
+    await page.waitForTimeout(25);
+  }
   if (!baseline) assert.equal((await state()).volumeVisible, false);
   await page.getByRole('button', { name: 'Pause cine', exact: true }).click();
   if (!baseline) assert.equal((await state()).volumeVisible, false);
@@ -258,18 +264,18 @@ try {
   });
   await check('Clear all masks this slice affects three organs on one frame and one undo restores them', async () => {
     await page.getByTestId('clear-all-masks-slice').click();
-    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled({ timeout: 30000 });
     for(let t=0;t<6;t++){
       const expected=Buffer.from(before[t]);if(t===2)for(let label=0;label<3;label++)expected.fill(0,(label*6+3)*64*64,(label*6+4)*64*64);
       assert.deepEqual(await (await page.request.get(`${prefix}/masks?time=${t}`)).body(),expected);
     }
     await page.getByRole('button',{name:'Undo edit',exact:true}).click();
-    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled({ timeout: 30000 });
     assert.deepEqual(await (await page.request.get(`${prefix}/masks?time=2`)).body(),before[2]);
   });
   await check('Clear all masks this layer affects only this acquisition layer across all times and invalidates their cached labels', async () => {
     await page.getByTestId('clear-all-masks-layer').click();
-    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled({ timeout: 30000 });
     for(let t=0;t<6;t++){
       const expected=Buffer.from(before[t]);for(let label=0;label<3;label++)expected.fill(0,(label*6+3)*64*64,(label*6+4)*64*64);
       assert.deepEqual(await (await page.request.get(`${prefix}/masks?time=${t}`)).body(),expected);
@@ -277,7 +283,7 @@ try {
       const v=await page.evaluate(()=>window.__CARDIAC_PRISM_DIAGNOSTICS__.frameValues((3*64+30)*64+15));assert(v.masks.every(x=>x===0));
     }
     await page.getByRole('button',{name:'Undo edit',exact:true}).click();
-    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled();
+    await expect(page.getByRole('button',{name:'Play cine',exact:true})).toBeEnabled({ timeout: 30000 });
     for(let t=0;t<6;t++)assert.deepEqual(await (await page.request.get(`${prefix}/masks?time=${t}`)).body(),before[t]);
   });
   await check('Locked structures disable all-mask clears and matched annotation replacement', async () => {
@@ -286,7 +292,13 @@ try {
     await page.getByLabel('Unlock RV',{exact:true}).click();
     await expect(page.getByTestId('clear-all-masks-slice')).toBeEnabled();
   });
-  await page.screenshot({ path: new URL('viewer.png', out).pathname });
+  try {
+    await page.screenshot({ path: new URL('viewer.png', out).pathname, timeout: 60000 });
+  } catch (error) {
+    if (error.name !== 'TimeoutError' || page.isClosed()) throw error;
+    report.artifact_warning = `Viewer screenshot unavailable: ${error.message}`;
+    console.warn(report.artifact_warning);
+  }
   assert.deepEqual(report.errors, []); report.passed = true;
 } catch (error) {
   report.failure = error.stack; process.exitCode = 1;

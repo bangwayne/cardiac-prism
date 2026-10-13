@@ -239,7 +239,7 @@ class PropagationMixin:
             self._set_job_phase(job, 'applying')
             with project.lock, self.lock:
                 if job['state'] == 'cancelled' or project.revision != job['base_revision'] or project.deleted:
-                    job['state'] = 'cancelled' if job['state'] == 'cancelled' else 'stale'
+                    self._finish_job(project, job, start, 'stale')
                     return
                 if read_notes(project.directory)['review_status'] == 'complete':
                     raise ValueError('The study was marked complete. Reopen it before propagating.')
@@ -255,19 +255,11 @@ class PropagationMixin:
                     overlap_policy='highest_probability', background_threshold=.5, tie_break='ascending_label_id',
                     protected_voxels=removed, checkpoint=self.model.status()['checkpoint'],
                     checkpoint_sha256=checkpoint_sha, gpu_ids=job['gpu_ids'], execution_devices=job['execution_devices'])
-                job.update(state='completed', revision=project.revision, changed_times=changed_times,
-                           protected_voxels=removed, checkpoint_sha256=checkpoint_sha)
+                self._finish_job(project, job, start, 'completed', revision=project.revision,
+                                 changed_times=changed_times, protected_voxels=removed,
+                                 checkpoint_sha256=checkpoint_sha)
         except Exception as error:
             log.exception('Temporal propagation failed')
-            with self.lock:
-                if job['state'] != 'cancelled':
-                    job.update(state='failed', error=str(error))
+            self._finish_job(project, job, start, 'failed', error=str(error))
         finally:
-            with self.lock:
-                self.active_tasks -= 1
-                job['seconds'] = round(time.perf_counter() - start, 3)
-                job['finished_at'] = now()
-                job.update(phase=job['state'], phase_started_at=job['finished_at'])
-            with project.lock:
-                if project.pending_job == job['id']:
-                    project.pending_job = None
+            self._finish_job(project, job, start)

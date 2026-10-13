@@ -288,6 +288,33 @@ class JobManager(PropagationMixin):
             if job['state'] != 'cancelled':
                 job.update(phase=phase, phase_started_at=now())
 
+    def _finish_job(self, project, job, started, state=None, **details):
+        """Publish a terminal result only after releasing its study reservation.
+
+        Commit paths call this while holding the same locks, so a cancellation
+        cannot overtake an applied result. The finally path is intentionally
+        idempotent. Cancellation may release the reservation earlier through
+        the API; an old worker must never release a newer job's reservation.
+        """
+        with project.lock, self.lock:
+            if 'finished_at' in job:
+                return
+            if project.pending_job == job['id']:
+                project.pending_job = None
+            self.active_tasks -= 1
+            finished = now()
+            if job['state'] == 'cancelled':
+                state = 'cancelled'
+                details.pop('error', None)
+            elif state is None:
+                state = 'failed'
+                details.setdefault('error', 'Inference stopped before completion.')
+            job.update(details)
+            job.update(seconds=round(time.perf_counter() - started, 3), finished_at=finished)
+            if 'phase' in job:
+                job.update(phase=state, phase_started_at=finished)
+            job['state'] = state
+
     def _initialize_gpu_workers(self, job, mismatch_message):
         """Load selected cards together, with cancellable, observable startup.
 
@@ -672,7 +699,7 @@ class JobManager(PropagationMixin):
             self._set_job_phase(job, 'applying')
             with project.lock, self.lock:
                 if job['state'] == 'cancelled' or project.revision != job['base_revision']:
-                    job['state'] = 'cancelled' if job['state'] == 'cancelled' else 'stale'
+                    self._finish_job(project, job, started, 'stale')
                     return
                 self._check_job_frames(project, job)
                 for label in labels:
@@ -687,21 +714,13 @@ class JobManager(PropagationMixin):
                                tie_break='ascending_label_id', protected_voxels=removed, device=execution_device,
                                checkpoint=status['checkpoint'], checkpoint_sha256=checkpoint_sha, click_prompt_seed=0,
                                gpu_ids=job['gpu_ids'])
-                job.update(state='completed', revision=project.revision, protected_voxels=removed,
-                           checkpoint_sha256=checkpoint_sha)
+                self._finish_job(project, job, started, 'completed', revision=project.revision,
+                                 protected_voxels=removed, checkpoint_sha256=checkpoint_sha)
         except Exception as error:
             log.exception('All-time-frame inference failed')
-            with self.lock:
-                if job['state'] != 'cancelled':
-                    job.update(state='failed', error=str(error))
+            self._finish_job(project, job, started, 'failed', error=str(error))
         finally:
-            with self.lock:
-                self.active_tasks -= 1; job['seconds'] = round(time.perf_counter() - started, 3)
-                job['finished_at'] = now()
-                job.update(phase=job['state'], phase_started_at=job['finished_at'])
-            with project.lock:
-                if project.pending_job == job['id']:
-                    project.pending_job = None
+            self._finish_job(project, job, started)
 
     def _run_layers(self, project, job, images, labels, protected, snapshot):
         started = time.perf_counter()
@@ -733,7 +752,7 @@ class JobManager(PropagationMixin):
                     job['completed_slices'] = completed
             with project.lock, self.lock:
                 if job['state'] == 'cancelled' or project.revision != job['base_revision']:
-                    job['state'] = 'cancelled' if job['state'] == 'cancelled' else 'stale'
+                    self._finish_job(project, job, started, 'stale')
                     return
                 self._check_job_frames(project, job)
                 status = self.model.status()
@@ -748,20 +767,13 @@ class JobManager(PropagationMixin):
                                tie_break='ascending_label_id', protected_voxels=removed,
                                device=status['device'], checkpoint=status['checkpoint'],
                                checkpoint_sha256=status['checkpoint_sha256'], click_prompt_seed=status['click_prompt_seed'])
-                job.update(state='completed', revision=project.revision, protected_voxels=removed)
+                self._finish_job(project, job, started, 'completed', revision=project.revision,
+                                 protected_voxels=removed)
         except Exception as error:
             log.exception('All-layer inference task failed')
-            with self.lock:
-                if job['state'] != 'cancelled':
-                    job.update(state='failed', error=str(error))
+            self._finish_job(project, job, started, 'failed', error=str(error))
         finally:
-            with self.lock:
-                self.active_tasks -= 1
-                job['seconds'] = round(time.perf_counter() - started, 3)
-                job['finished_at'] = now()
-            with project.lock:
-                if project.pending_job == job['id']:
-                    project.pending_job = None
+            self._finish_job(project, job, started)
 
     def _run(self, project, job, image, key, snapshot, context):
         started = time.perf_counter()
@@ -779,11 +791,12 @@ class JobManager(PropagationMixin):
                                             context['prior'], context['iteration'])
             with project.lock, self.lock:
                 if job['state'] == 'cancelled' or project.revision != job['base_revision']:
-                    job['state'] = 'cancelled' if job['state'] == 'cancelled' else 'stale'
+                    self._finish_job(project, job, started, 'stale')
                     return
                 self._check_job_frames(project, job)
                 if context is None:
                     self._commit_all(project, job, key, snapshot, results)
+                    self._finish_job(project, job, started, 'completed')
                     return
                 t, z, label = key
                 mask = result['mask'].astype(np.uint8)
@@ -809,7 +822,6 @@ class JobManager(PropagationMixin):
                                protected_voxels=removed, checkpoint=self.model.status()['checkpoint'],
                                checkpoint_sha256=self.model.status()['checkpoint_sha256'],
                                click_prompt_seed=self.model.status()['click_prompt_seed'])
-                job['state'] = 'completed'
                 job['revision'] = project.revision
                 job['protected_voxels'] = removed
                 job['changed_voxels'] = changed
@@ -818,20 +830,12 @@ class JobManager(PropagationMixin):
                     x = min(mask.shape[1] - 1, max(0, int(round(last['x']))))
                     y = min(mask.shape[0] - 1, max(0, int(round(last['y']))))
                     job['point_foreground'] = bool(mask[y, x])
+                self._finish_job(project, job, started, 'completed')
         except Exception as error:
             log.exception('Inference task failed')
-            with self.lock:
-                if job['state'] != 'cancelled':
-                    job['state'] = 'failed'
-                    job['error'] = str(error)
+            self._finish_job(project, job, started, 'failed', error=str(error))
         finally:
-            with self.lock:
-                self.active_tasks -= 1
-            job['seconds'] = round(time.perf_counter() - started, 3)
-            job['finished_at'] = now()
-            with project.lock:
-                if project.pending_job == job['id']:
-                    project.pending_job = None
+            self._finish_job(project, job, started)
 
     def _exclusive_all(self, t, z, labels, results, protected):
         probabilities = np.stack([results[label]['probability'] for label in labels])
@@ -868,7 +872,7 @@ class JobManager(PropagationMixin):
                        overlap_policy='highest_probability', background_threshold=0.5, tie_break='ascending_label_id',
                        protected_voxels=removed, device=status['device'], checkpoint=status['checkpoint'],
                        checkpoint_sha256=status['checkpoint_sha256'], click_prompt_seed=status['click_prompt_seed'])
-        job.update(state='completed', revision=project.revision, protected_voxels=removed)
+        job.update(revision=project.revision, protected_voxels=removed)
 
     def get(self, job_id):
         with self.lock:

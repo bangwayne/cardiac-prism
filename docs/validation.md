@@ -1,17 +1,19 @@
 # Release validation
 
-Version 0.1.1 standardizes the product, package, configuration, and asset names while retaining the same model checkpoint bytes. The checks below distinguish the current rename validation from the **0.1.0 installation baseline**. They verify software compatibility and preservation of model behavior; they are not an estimate of clinical segmentation accuracy.
+Version 0.1.1 standardizes the product, package, configuration, and asset names, improves portable installation and release checks, and fixes task-completion races while retaining the same model checkpoint bytes. The checks below distinguish the current validation from the **0.1.0 installation baseline**. They verify software compatibility and preservation of model behavior; they are not an estimate of clinical segmentation accuracy.
 
-## Version 0.1.1 rename checks
+## Version 0.1.1 checks
 
-- **272 backend tests** pass, in an isolated source-only copy, including legacy configuration compatibility, safe Node.js extraction, and resumable release publication.
+- **280 backend tests** pass in an isolated source-only installation, including legacy configuration compatibility, safe Node.js extraction, resumable release publication, and atomic job completion. The final suite also passes in the constrained Ubuntu container described below.
 - Native CPU and NVIDIA Quadro RTX 6000 comparisons each exercise all 18 inference paths and compare 55 arrays with the corresponding same-hardware 0.1.0 baseline. Every array is exactly equal (maximum absolute difference 0). Checkpoint bytes and SHA-256 are unchanged.
 - TypeScript compilation and the production frontend build pass with the updated package name and application title.
 - All five browser suites pass using the renamed configuration and diagnostic interfaces. They cover refinement controls, shared cine navigation, physical orientation, source-space export, surface colors, and lossless frame caching.
+- All five browser suites also pass in an Ubuntu 22.04 container restricted to two CPU cores and 7 GiB RAM, using Chromium software rendering. Readiness waits allow slower rendering without relaxing the exact pixel, geometry, or complete-cine checks.
+- Eight deterministic concurrency tests cover completed, failed, and stale outcomes across five segmentation/propagation paths, cancellation during commit, and immediate editing or resubmission. They verify that terminal results cannot be observed before the corresponding study reservation is released. The previous implementation fails the three single-slice outcome regressions.
 - A disposable CPU service loads the renamed checkpoint and opens the official ACDC end-diastolic example. Its imported expert labels display in all linked views and the on-demand 3D surface; saving succeeds. The production interface displays **Cardiac-Prism Workstation** and exposes no development diagnostic interface.
 - A rebuilt GPU Docker image on a separate NVIDIA Quadro RTX 6000 server also reproduces all 55 baseline arrays exactly. The documented GPU helper verifies the renamed assets, exposes only the selected GPU, opens the 30-frame ACDC cine, runs a real MYO prediction on the requested plane, and saves the study. The service reports version 0.1.1 and the renamed model.
+- After the task-completion fix, a rebuilt GPU Docker image passes the real-model HTTP workflow again: positive/negative clicks, one-pixel editing, undo/redo, locked batch segmentation, temporal propagation, and verified study backup/import. The test uses an isolated two-frame, two-layer crop of the public ACDC cine.
 - The documentation screenshot was recaptured from the production build using the public ACDC example and reference annotation. GitHub Actions results must be checked separately in the repository; local and remote installation checks do not establish that its hosted workflow succeeded.
-
 - The renamed checkpoint also downloads successfully from the private GitHub model tag using existing Git SSH access and Git LFS, then passes its size and SHA-256 checks.
 
 ## Version 0.1.0 installation baseline
