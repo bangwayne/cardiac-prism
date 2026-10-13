@@ -68,6 +68,12 @@ matching existing rules into ignored `test-results/`, creates or updates the fou
 named rulesets, and reads them back to verify activation. Unrelated rulesets are
 left alone. Repeat execution reuses matching rules rather than creating duplicates.
 Use `--dry-run` to inspect the planned changes first. Revoke the token after use.
+If setup stops after creating some rules, rerun the same command: it resumes the
+existing named rules and creates the remaining ones. Verification tolerates
+GitHub omitting the default false update parameter; account exceptions and
+protection settings still require an exact match. Failed read-back checks save
+the expected and actual rule configurations in `verify-<id>.json` in the report
+directory. These reports contain rule settings, not the token.
 
 Alternatively, import the prepared files through the GitHub website:
 

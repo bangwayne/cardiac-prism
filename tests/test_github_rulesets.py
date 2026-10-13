@@ -66,6 +66,50 @@ class GitHubRulesetSetupTests(unittest.TestCase):
             self.configure(client)
         self.assertEqual(client.writes, [])
 
+    def test_server_omitted_default_update_parameter_is_verified_without_duplicate_writes(self):
+        class GitHubDefaults(FakeGitHub):
+            def request(self, method, route, payload=None):
+                response = super().request(method, route, payload)
+                if method == 'GET' and '/rulesets/' in route:
+                    for rule in response['rules']:
+                        if rule['type'] == 'update':
+                            rule.pop('parameters', None)
+                return response
+
+        client = GitHubDefaults()
+        # Resume the first active rule left by a prior interrupted setup.
+        payload = json.loads((setup.TEMPLATES / setup.FILES[0]).read_text())
+        client.request('POST', '/repos/' + setup.REPOSITORY + '/rulesets', payload)
+        report = self.configure(client)
+        self.assertTrue(report['verified'])
+        self.assertEqual(report['rulesets'][0]['state'], 'already active')
+        self.assertEqual(len(client.writes), 4)
+        self.configure(client)
+        self.assertEqual(len(client.writes), 4)
+
+    def test_omitted_update_default_cannot_satisfy_enabled_fetch_and_merge(self):
+        enabled = {'type': 'update', 'parameters': {'update_allows_fetch_and_merge': True}}
+        self.assertFalse(setup.same_configuration({'type': 'update'}, enabled))
+        disabled = {'type': 'update', 'parameters': {'update_allows_fetch_and_merge': False}}
+        self.assertFalse(setup.same_configuration(enabled, disabled))
+
+    def test_missing_bypass_permissions_still_fails_verification_and_saves_details(self):
+        class HiddenActors(FakeGitHub):
+            def request(self, method, route, payload=None):
+                response = super().request(method, route, payload)
+                if method == 'GET' and '/rulesets/' in route:
+                    response.pop('bypass_actors')
+                return response
+
+        client = HiddenActors()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with self.assertRaisesRegex(RuntimeError, 'Server verification failed'):
+                self.configure(client, output=output)
+            detail = json.loads((output / 'verify-1.json').read_text())
+            self.assertIn('bypass_actors', detail['expected'])
+            self.assertNotIn('bypass_actors', detail['actual'])
+
     def test_dry_run_does_not_mutate_repository(self):
         client = FakeGitHub()
         report = self.configure(client, dry_run=True)

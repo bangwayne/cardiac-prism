@@ -55,6 +55,12 @@ class GitHub:
 def same_configuration(actual, expected):
     """Ignore response metadata, but never ignore extra actors or rules."""
     if isinstance(expected, dict):
+        if (isinstance(actual, dict) and actual.get('type') == expected.get('type') == 'update'
+                and isinstance(actual.get('parameters', {}), dict)):
+            # GitHub omits the update parameter when its value is the default false.
+            actual = {**actual, 'parameters': {
+                'update_allows_fetch_and_merge': False, **actual.get('parameters', {})
+            }}
         return isinstance(actual, dict) and all(
             key in actual and same_configuration(actual[key], value)
             for key, value in expected.items()
@@ -116,8 +122,14 @@ def configure(client, dry_run=False, output=None):
             applied = client.request(method, route, wanted)
             identifier = applied['id']
             verified = client.request('GET', base + '/rulesets/' + str(identifier))
+            if output is not None:
+                (output / f'verify-{identifier}.json').write_text(
+                    json.dumps({'expected': wanted, 'actual': verified}, indent=2) + '\n')
             if not same_configuration(verified, wanted):
-                raise RuntimeError('Server verification failed for ' + wanted['name'])
+                fields = [key for key, value in wanted.items()
+                          if key not in verified or not same_configuration(verified[key], value)]
+                raise RuntimeError('Server verification failed for ' + wanted['name']
+                                   + ' (fields: ' + ', '.join(fields) + ')')
             state = 'updated' if previous else 'created'
         results.append({'name': wanted['name'], 'state': state, 'id': identifier})
         print(f'{state}: {wanted["name"]}', flush=True)
