@@ -53,6 +53,24 @@ rulesets. **Tracking these files in Git does not activate server-side branch
 protection.** A repository administrator must import or apply them in GitHub.
 They use the verified public account ID for `@bangwayne` (`192292443`).
 
+For a one-time command-line setup, sign in as `@bangwayne` and create a
+[fine-grained personal access token](https://github.com/settings/personal-access-tokens/new)
+with a short expiration, **Only select repositories → cardiac-prism**, and
+**Administration → Read and write**. Metadata read access is included. Run:
+
+```bash
+python3 scripts/apply_github_rulesets.py
+```
+
+Paste the token only into the command's hidden terminal prompt. It is used in
+memory and is not saved. The helper verifies the account and branches, backs up
+matching existing rules into ignored `test-results/`, creates or updates the four
+named rulesets, and reads them back to verify activation. Unrelated rulesets are
+left alone. Repeat execution reuses matching rules rather than creating duplicates.
+Use `--dry-run` to inspect the planned changes first. Revoke the token after use.
+
+Alternatively, import the prepared files through the GitHub website:
+
 Keep `main` as the default branch. In **Settings → Rules → Rulesets → New
 ruleset → Import a ruleset**, import each of the four JSON files and check that
 its enforcement is **Active**:
