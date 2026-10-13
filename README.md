@@ -4,13 +4,13 @@
 
 # Cardiac-Prism Workstation
 
-**[Watch the tutorial · 6:55 (MP4)](docs/media/Cardiac-Prism-Tutorial.mp4)** · **[Read the illustrated user guide (PDF)](docs/media/Cardiac-Prism-User-Guide.pdf)**
+**[Download the original tutorial · 6:55 (MP4)](docs/media/Cardiac-Prism-Tutorial.mp4)** · **[Read the illustrated user guide (PDF)](docs/media/Cardiac-Prism-User-Guide.pdf)**
 
 Connect, open a study, explore the views, segment and refine masks, then save your work. The tutorial includes English narration and captions; the illustrated guide is 17 pages.
 
-[![Open the Cardiac-Prism tutorial](docs/images/workstation.png)](docs/media/Cardiac-Prism-Tutorial.mp4)
+https://github.com/user-attachments/assets/430abae0-7cf6-46a2-89dd-871434937de6
 
-*Tutorial and guide visuals use the public ACDC example, with model predictions and demonstration edits. The preview above shows its imported expert reference annotation. These derived visuals retain ACDC's CC BY-NC-SA 4.0 terms; see [data attribution and citation](docs/sample-data.md#license-and-citation).*
+*Tutorial and guide visuals use the public ACDC example, with model predictions and demonstration edits. These derived visuals retain ACDC's CC BY-NC-SA 4.0 terms; see [data attribution and citation](docs/sample-data.md#license-and-citation).*
 
 A self-hosted workstation for **cardiac cine MRI segmentation and annotation**. The current release supports three structures: **left ventricular cavity (LV), right ventricular cavity (RV), and left ventricular myocardium (MYO)**. Open a 3D cardiac volume or 4D cine, inspect linked slice views, and refine masks with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
 
