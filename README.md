@@ -1,12 +1,16 @@
 # Cardiac-Prism Workstation
 
+**[Watch the tutorial · 6:55 (MP4)](docs/media/Cardiac-Prism-Tutorial.mp4)** · **[Read the illustrated user guide (PDF)](docs/media/Cardiac-Prism-User-Guide.pdf)**
+
+Connect, open a study, explore the views, segment and refine masks, then save your work. The tutorial includes English narration and captions; the illustrated guide is 17 pages.
+
+[![Open the Cardiac-Prism tutorial](docs/images/workstation.png)](docs/media/Cardiac-Prism-Tutorial.mp4)
+
+*Tutorial and guide visuals use the public ACDC example, with model predictions and demonstration edits. The preview above shows its imported expert reference annotation. These derived visuals retain ACDC's CC BY-NC-SA 4.0 terms; see [data attribution and citation](docs/sample-data.md#license-and-citation).*
+
 A self-hosted workstation for **cardiac cine MRI segmentation and annotation**. The current release supports three structures: **left ventricular cavity (LV), right ventricular cavity (RV), and left ventricular myocardium (MYO)**. Open a 3D cardiac volume or 4D cine, inspect linked slice views, and refine masks with clicks or pixel-level tools. Images, annotations, and inference stay on your server.
 
 The released checkpoint and workstation are configured for these three cardiac structures. For the underlying model's broader segmentation modes, imaging modalities, and datasets, see [K-Prism](https://github.com/bangwayne/K-Prism). We welcome research fine-tuning and community contributions that extend the platform.
-
-![Cardiac-Prism showing linked cardiac MR views and a 3D segmentation surface](docs/images/workstation.png)
-
-*ACDC end-diastolic volume with its imported expert reference annotation; this screenshot illustrates the workstation interface. [Data attribution and terms](docs/sample-data.md).*
 
 **Source-available for noncommercial use.** The workstation and released cardiac model use [PolyForm Noncommercial 1.0.0](LICENSE). Academic research and other permitted noncommercial purposes are supported; commercial uses outside the license's permitted purposes require separate permission. Upstream components and public sample data retain their own licenses. See [NOTICE](NOTICE).
 
