@@ -6,7 +6,7 @@ authors:
   - family-names: Guo
     given-names: Bangwei
   - name: "Cardiac-Prism contributors"
-version: 0.1.1
+version: 0.1.2
 url: "https://github.com/bangwayne/cardiac-prism"
 repository-code: "https://github.com/bangwayne/cardiac-prism"
 license: PolyForm-Noncommercial-1.0.0

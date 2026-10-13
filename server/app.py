@@ -161,7 +161,7 @@ def create_app(workspace=None, model=None):
                 except OSError:
                     log.exception('Could not save study %s during shutdown', project.id)
 
-    application = FastAPI(title='Cardiac-Prism Workstation', version='0.1.1', lifespan=lifespan)
+    application = FastAPI(title='Cardiac-Prism Workstation', version='0.1.2', lifespan=lifespan)
     application.state.store = store
     application.state.model = service
     application.state.jobs = manager
@@ -222,7 +222,7 @@ def create_app(workspace=None, model=None):
 
     @application.get('/api/health')
     def health():
-        return {'status': 'ok', 'model': service.status(), 'version': '0.1.1',
+        return {'status': 'ok', 'model': service.status(), 'version': '0.1.2',
                 'features': {'study_notes': True, 'study_lifecycle': True, 'study_management': True,
                              'annotation_progress': True, 'temporal_propagation': True, 'frame_locks': True,
                              'slice_locks': True, 'activity_history': True, 'dicom_import': True},

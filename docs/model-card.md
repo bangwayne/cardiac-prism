@@ -8,7 +8,7 @@
 | Architecture | K-Prism mixture-of-experts interactive segmentation |
 | Checkpoint | `weight/cardiac-prism-v0.1.pth` |
 | Profile | `weight/cardiac-prism-v0.1.json` |
-| Workstation release | `v0.1.1` |
+| Workstation release | `v0.1.2` |
 | File size | 178,498,401 bytes |
 | SHA-256 | `2ba5f7c3a33e798ec5533184e0fe0fed7af4e565f0a5e8ae3bfb3a15a5f0e703` |
 | License | [PolyForm Noncommercial 1.0.0](../LICENSE) |
@@ -19,10 +19,11 @@ Version 0.1.1 standardizes the checkpoint and profile filenames; the model remai
 version 0.1 and its checkpoint bytes and SHA-256 are unchanged from release 0.1.0.
 Keep the JSON profile next to the checkpoint; the profile selects the matching input
 transforms and query IDs. The download script checks the full checkpoint hash before
-installing it. Obtain the checkpoint from the release
-linked in the versioned [asset manifest](../assets/manifest.json). Weights are hosted
-on GitHub using Release assets and Git LFS; no Hugging Face account or model host is
-required. The architecture is packaged as `cardiac_prism/`; its upstream K-Prism
+installing it. The `main` branch and `v0.1.2` source tag include the checkpoint through
+Git LFS, so a normal clone with Git LFS installed retrieves both source and model.
+The versioned [asset manifest](../assets/manifest.json) also identifies its GitHub
+Release download. No Hugging Face account or model host is required.
+The architecture is packaged as `cardiac_prism/`; its upstream K-Prism
 attribution and license remain intact.
 
 ## Intended use
@@ -97,16 +98,17 @@ python3 scripts/download_assets.py --weights
 python3 scripts/download_assets.py --weights --verify
 ```
 
-While the repository is private, the release URL requires project access. If that
-URL is unavailable anonymously, the installer retrieves the same verified file from
-the repository's versioned `models/v0.1.1` tag using **Git LFS** and the Git credentials for
-your clone's `origin`. Clone through an authorized GitHub account, install Git LFS,
-and keep that account's SSH or Git credential configuration available when running
-the installer. No token is written into the asset manifest. For Docker deployment,
+The downloaded checkpoint is normally already present after cloning. The commands
+above verify it and recover a missing file. While the repository is private, GitHub
+downloads require project access. If the Release URL is unavailable anonymously,
+the installer retrieves the same verified file from the immutable `v0.1.2` source
+tag using **Git LFS** and the Git credentials for your clone's `origin`. No separate
+model branch is required. Earlier `models/v0.1.x` tags are retained for existing
+installations. No token is written into the asset manifest. For Docker deployment,
 run asset setup on the host before starting the container.
 
 For a server without Internet access, download the checkpoint from the
-[v0.1.1 release](https://github.com/bangwayne/cardiac-prism/releases/tag/v0.1.1) on another
+[v0.1.2 release](https://github.com/bangwayne/cardiac-prism/releases/tag/v0.1.2) on another
 machine, copy it to the server, and run:
 
 ```bash

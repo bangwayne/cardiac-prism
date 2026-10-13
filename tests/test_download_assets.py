@@ -137,9 +137,9 @@ class DownloadAssetsTests(unittest.TestCase):
                 self.assertEqual(opener.return_value.open.call_count, 1)
         self.assert_no_partial_files()
 
-    def test_private_import_uses_origin_and_validates_lfs_file(self):
+    def check_private_import(self, reference):
         commands = []
-        self.asset["git_ref"] = "models/v0.1.0"
+        self.asset["git_ref"] = reference
 
         def git_run(arguments, **kwargs):
             commands.append(arguments)
@@ -156,8 +156,14 @@ class DownloadAssetsTests(unittest.TestCase):
         with patch.object(assets.subprocess, "run", side_effect=git_run):
             assets.import_private_weights(self.asset, self.target, self.root)
         self.assertTrue(assets.validate(self.target, self.asset))
-        self.assertTrue(any("models/v0.1.0" in command for command in commands))
+        self.assertTrue(any(reference in command for command in commands))
         self.assertTrue(any(command[1:3] == ["lfs", "pull"] for command in commands))
+
+    def test_private_import_uses_origin_and_validates_lfs_file(self):
+        self.check_private_import("models/v0.1.0")
+
+    def test_private_import_supports_source_release_containing_weights(self):
+        self.check_private_import("v0.1.2")
 
     def test_private_errors_do_not_echo_git_credentials(self):
         failure = assets.subprocess.CalledProcessError(1, ["git"], stderr="https://secret-token@example.org")

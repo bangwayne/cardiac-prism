@@ -16,7 +16,7 @@ Plan disk space for dependencies, the checkpoint, source images, editable masks,
 
 The release uses a pinned PyTorch/CUDA stack. Installing a newer CUDA toolkit on the host does not change the bundled runtime. Verify that your NVIDIA driver supports the packaged runtime and that your GPU architecture is supported by the selected PyTorch build.
 
-## 2. Download the source
+## 2. Download the source and model
 
 The repository is currently private. Ask the maintainer to grant your GitHub account access, configure that account's SSH key on the server, and install Git LFS. For a Debian/Ubuntu system, Git and Git LFS can be installed with:
 
@@ -36,10 +36,12 @@ cd cardiac-prism
 For a reproducible installation, select a published release tag instead of a moving development branch:
 
 ```bash
-git checkout v0.1.1
+git checkout v0.1.2
 ```
 
-The model and example are fetched separately. Their locations and SHA-256 values are pinned in the asset manifest. If a release download is unavailable because the repository is private, the downloader retrieves the selected asset through Git LFS at the pinned `models/v0.1.1` tag from the separate asset history. It uses the existing Git remote and SSH authentication; it does not require a token to be written to a configuration file. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
+The `main` branch and `v0.1.2` source tag contain both the application and the released model. Git LFS downloads `weight/cardiac-prism-v0.1.pth` during a normal clone; its matching JSON profile is tracked beside it. You do not need a second branch or repository. The public ACDC example is downloaded during setup. All asset sizes and SHA-256 values are pinned in the manifest.
+
+If cloning skipped the model download, run `git lfs pull` or `python3 scripts/download_assets.py --weights`. The downloader can use the GitHub Release or recover the same checkpoint through Git LFS at the immutable `v0.1.2` source tag. It reuses the existing Git remote and SSH authentication; no token needs to be written to a configuration file. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
 
 ## 3. Install with Docker
 
@@ -117,7 +119,7 @@ or:
 ./scripts/setup.sh --device cpu
 ```
 
-Setup creates `.venv`, installs the pinned Python stack and model dependencies, installs a project-local Node runtime if required, runs `npm ci`, builds the frontend, prepares dcm2niix, and downloads the weights and example. It does not need administrator access after the system prerequisites are available. Native inference does not require a separate host CUDA toolkit when using the packaged PyTorch wheels.
+Setup creates `.venv`, installs the pinned Python stack and model dependencies, installs a project-local Node runtime if required, runs `npm ci`, builds the frontend, prepares dcm2niix, verifies the checkpoint, and downloads the example and any missing assets. It does not need administrator access after the system prerequisites are available. Native inference does not require a separate host CUDA toolkit when using the packaged PyTorch wheels.
 
 Start the application from the repository root:
 

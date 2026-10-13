@@ -46,7 +46,7 @@ COPY scripts/check_environment.py scripts/check_environment.py
 COPY start.sh ./
 COPY --from=frontend /build/frontend/dist frontend/dist
 COPY --from=python-build /build/runtime/tools runtime/tools
-COPY LICENSE NOTICE THIRD_PARTY_NOTICES.txt ./
+COPY LICENSE NOTICE ./
 COPY licenses/ licenses/
 RUN chmod -R a+rX /app && chmod +x start.sh scripts/start.sh && \
     mkdir -p /data/workspace /app/weight /app/demo-data/images /app/demo-data/references && \

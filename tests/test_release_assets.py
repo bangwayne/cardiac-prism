@@ -54,6 +54,16 @@ class ReleaseAssetsTests(unittest.TestCase):
         subprocess.run(["sha256sum", "--strict", "--check", "SHA256SUMS"], cwd=self.output,
                        capture_output=True, check=True)
 
+    def test_source_tag_can_contain_the_model_and_source_together(self):
+        self.entry["git_ref"] = self.manifest["release"]
+        self.write_manifest()
+        (self.source / self.entry["path"]).write_bytes(self.content)
+        self.assertEqual(release.read_manifest(self.source, "v0.1.1")[1], "v0.1.1")
+        self.assertEqual(release.assemble(self.source, self.source, self.output, "v0.1.1"), 7)
+        self.assertEqual((self.output / "model.pth").read_bytes(), self.content)
+        subprocess.run(["sha256sum", "--strict", "--check", "SHA256SUMS"], cwd=self.output,
+                       capture_output=True, check=True)
+
     def test_bad_weight_or_profile_never_produces_uploadable_assets(self):
         path = self.models / self.entry["path"]
         path.write_bytes(b"wrong contents")
@@ -69,10 +79,12 @@ class ReleaseAssetsTests(unittest.TestCase):
     def test_wrong_source_tag_and_mutable_model_branch_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "source tag"):
             release.read_manifest(self.source, "v0.1.2")
-        self.entry["git_ref"] = "model-assets"
-        self.write_manifest()
-        with self.assertRaisesRegex(ValueError, "models/v"):
-            self.assemble()
+        for reference in ("main", "model-assets", "refs/heads/main", "v0.1.1\nmain", "--upload-pack=unsafe", None):
+            with self.subTest(reference=reference):
+                self.entry["git_ref"] = reference
+                self.write_manifest()
+                with self.assertRaisesRegex(ValueError, "immutable version tag"):
+                    self.assemble()
 
     def test_duplicate_attachment_names_cannot_overwrite_earlier_assets(self):
         self.manifest["assets"].append({**self.entry, "id": "another-model"})

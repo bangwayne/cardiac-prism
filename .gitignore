@@ -15,6 +15,7 @@ __pycache__/
 .DS_Store
 *.log
 *.pth
+!/weight/cardiac-prism-v0.1.pth
 *.pt
 *.onnx
 *.nii

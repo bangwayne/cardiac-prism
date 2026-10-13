@@ -1,6 +1,16 @@
 # Release validation
 
-Version 0.1.1 standardizes the product, package, configuration, and asset names, improves portable installation and release checks, and fixes task-completion races while retaining the same model checkpoint bytes. The checks below distinguish the current validation from the **0.1.0 installation baseline**. They verify software compatibility and preservation of model behavior; they are not an estimate of clinical segmentation accuracy.
+These checks verify software compatibility and preservation of model behavior; they are not an estimate of clinical segmentation accuracy. Each section records the checks actually performed for that version.
+
+## Version 0.1.2 packaging checks
+
+Version 0.1.2 places the single released checkpoint alongside the source through Git LFS and consolidates license files. The model, preprocessing, and viewer behavior are unchanged from 0.1.1.
+
+- Thirteen asset-download tests, nine release-publication tests, and seven Docker GPU-selection tests pass. They cover downloading from a combined source/model tag and compatibility with older model-only tags.
+- Both GitHub workflows pass actionlint validation. CI checks out source without downloading model tensors; release packaging retrieves the checkpoint separately from the same version tag.
+- The real checkpoint assembles into seven release attachments with verified checksums. Its Git LFS pointer, size, and SHA-256 match the existing model exactly.
+- Third-party license and attribution texts are byte-identical after reorganization. The removed project license copy was identical to the root `LICENSE`.
+- A fresh Docker build succeeds with the reorganized files. Model imports, application version, and notice locations pass the container check; all 91 packaged runtime, script, and license file hashes match the source.
 
 ## Version 0.1.1 checks
 

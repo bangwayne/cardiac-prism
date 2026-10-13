@@ -1,7 +1,7 @@
 # This standalone override exposes all GPUs. Use scripts/docker.sh for GPU subsets.
 services:
   workstation:
-    image: cardiac-prism:0.1.1-cuda11.7
+    image: cardiac-prism:0.1.2-cuda11.7
     build:
       args:
         TORCH_VARIANT: cu117

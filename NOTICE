@@ -72,7 +72,7 @@ The following exclusions and attributions are part of this distribution:
 8. Installed dependencies
    React, Cornerstone3D, vtk.js, FastAPI, PyTorch, SimpleITK, pydicom, dcm2niix,
    and other dependencies retain their respective licenses. Frontend notices
-   are collected in THIRD_PARTY_NOTICES.txt. Package distributions and any
+   are collected in licenses/THIRD_PARTY_NOTICES.txt. Package distributions and any
    container base image include additional notices for their own components.
 
 Keep this notice, LICENSE, applicable files in licenses/, and source-file

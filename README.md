@@ -8,7 +8,7 @@ A self-hosted workstation for viewing and refining cardiac MR segmentations. Ope
 
 **Source-available for noncommercial use.** The workstation and released cardiac model use [PolyForm Noncommercial 1.0.0](LICENSE). Academic research and other permitted noncommercial purposes are supported; commercial uses outside the license's permitted purposes require separate permission. Upstream components and public sample data retain their own licenses. See [NOTICE](NOTICE).
 
-The repository is currently distributed privately to authorized collaborators. Your GitHub account needs repository access and a working SSH key. Install Git LFS for the private model download; no personal access token is stored by the workstation.
+The repository is currently distributed privately to authorized collaborators. Your GitHub account needs repository access and a working SSH key. Install Git LFS before cloning: the `main` branch contains both the application and its released checkpoint. No personal access token is stored by the workstation.
 
 This is research software. Review predictions before using them in an analysis; the release is not a validated diagnostic product.
 
@@ -21,7 +21,7 @@ This is research software. Review predictions before using them in an analysis; 
 - Same-layer temporal propagation from 1–3 reference frames, with protection for manual edits.
 - Locks for selected frame × layer combinations, study notes, completion markers, and a readable activity history.
 - On-demand 3D mask surfaces, annotation import, NIfTI export, and complete study backups.
-- A versioned cardiac checkpoint and a public ACDC 4D example, downloaded separately with SHA-256 verification.
+- A versioned cardiac checkpoint included through Git LFS, plus a public ACDC 4D example downloaded during setup; both verified by SHA-256.
 
 The model is **2D**: a click affects the current acquisition layer and time frame. Playback displays existing masks; propagation and whole-study segmentation are explicit actions.
 
@@ -40,7 +40,7 @@ cd cardiac-prism
 ./scripts/docker.sh gpu up --build -d
 ```
 
-The helper downloads the pinned checkpoint and public example, prepares persistent directories, and starts the workstation. The first build downloads dependencies and takes longer than subsequent starts.
+The clone retrieves the checkpoint through Git LFS. The helper verifies it, downloads the public example and any missing assets, prepares persistent directories, and starts the workstation. The first build downloads dependencies and takes longer than subsequent starts.
 
 ### Docker on CPU
 
@@ -65,7 +65,7 @@ cd cardiac-prism
 ./start.sh
 ```
 
-Use `--device cpu` for a CPU installation. The setup script creates an isolated `.venv`, installs pinned dependencies, prepares Node when needed, builds the frontend, and downloads the model and example. See the [full installation guide](docs/install.md) for prerequisites and configuration.
+Use `--device cpu` for a CPU installation. The setup script creates an isolated `.venv`, installs pinned dependencies, prepares Node when needed, builds the frontend, verifies the model, and downloads the example and any missing assets. See the [full installation guide](docs/install.md) for prerequisites and configuration.
 
 ### Open the workstation
 
@@ -97,7 +97,9 @@ python3 scripts/download_assets.py --all
 python3 scripts/download_assets.py --all --verify
 ```
 
-For separate downloads, use `--weights` or `--sample`. The checkpoint is stored as `weight/cardiac-prism-v0.1.pth`, with its matching JSON profile alongside it; the public example is stored under `demo-data/`. **Model weights are hosted on GitHub**, through Release assets and a separate Git LFS asset history. No Hugging Face account or model download is required. Large assets are kept outside the main source branch. When a release asset is private or unavailable, the downloader uses your existing authorized Git SSH access through Git LFS, pinned to the `models/v0.1.1` asset tag. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
+For separate downloads, use `--weights` or `--sample`. The `main` branch includes `weight/cardiac-prism-v0.1.pth` through Git LFS, with its matching JSON profile alongside it. A normal clone with Git LFS installed retrieves the complete model. **Code and model weights are hosted on GitHub**; no Hugging Face account is needed. If the model was not downloaded during cloning, the installer can recover it from the GitHub Release or the immutable `v0.1.2` source tag using your authorized Git access.
+
+The public example is downloaded separately under `demo-data/`. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
 
 ## Documentation
 
@@ -115,7 +117,7 @@ For separate downloads, use `--weights` or `--sample`. The checkpoint is stored 
 
 ## Acknowledgments and citation
 
-The segmentation engine builds on [K-Prism](https://github.com/bangwayne/K-Prism). The viewer uses Cornerstone3D and vtk.js. Upstream copyright and license notices are preserved in [NOTICE](NOTICE), [licenses/](licenses/), and [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
+The segmentation engine builds on [K-Prism](https://github.com/bangwayne/K-Prism). The viewer uses Cornerstone3D and vtk.js. Upstream copyright and license notices are preserved in [NOTICE](NOTICE), [licenses/](licenses/), and [dependency notices](licenses/THIRD_PARTY_NOTICES.txt).
 
 If you use the workstation in research, cite this repository and its release version using [CITATION.cff](CITATION.cff). Also cite the K-Prism method and ACDC when using the distributed example:
 

@@ -5,3 +5,4 @@
 *.yaml text eol=lf
 *.png binary
 *.svg text eol=lf
+weight/*.pth filter=lfs diff=lfs merge=lfs -text

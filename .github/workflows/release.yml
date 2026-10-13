@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Existing source version tag to publish or verify (for example v0.1.1)
+        description: Existing source version tag to publish or verify (for example v0.1.2)
         required: true
         type: string
 permissions:
@@ -29,23 +29,26 @@ jobs:
     steps:
       - name: Check out release tooling
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          lfs: false
       - name: Check out selected source tag
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: refs/tags/${{ env.RELEASE_TAG }}
           path: release-source
           persist-credentials: false
+          lfs: false
       - name: Read and validate model revision
         id: manifest
         run: |
           model_ref="$(python3 scripts/assemble_release.py --root release-source --tag "$RELEASE_TAG" --model-ref)"
           echo "model_ref=$model_ref" >> "$GITHUB_OUTPUT"
           echo "source_commit=$(git -C release-source rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Check out verified model assets
+      - name: Check out model checkpoint
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: refs/tags/${{ steps.manifest.outputs.model_ref }}
-          path: model-assets
+          path: model-files
           lfs: true
           persist-credentials: false
       - name: Assemble verified release assets

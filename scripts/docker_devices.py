@@ -83,7 +83,7 @@ def main(explicit_bindings=None):
             raise SystemExit('Use comma-separated physical GPU indices or complete GPU UUIDs.')
         reservation['device_ids'] = identifiers
     service = {
-        'image': 'cardiac-prism:0.1.1-cuda11.7',
+        'image': 'cardiac-prism:0.1.2-cuda11.7',
         'build': {'args': {'TORCH_VARIANT': 'cu117'}},
         'environment': {'CARDIAC_PRISM_DEVICE': '${CARDIAC_PRISM_DEVICE:-${KPRISM_DEVICE:-cuda:0}}',
                         'NVIDIA_VISIBLE_DEVICES': ','.join(identifiers),

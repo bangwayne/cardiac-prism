@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Keep application code and the single released cardiac checkpoint together on `main`; Git LFS stores the unchanged checkpoint.
+- Pin source and model downloads to the same release tag. Retain older model tags for existing installations.
+- Keep the project license at the repository root and consolidate upstream notices under `licenses/`, preserving their complete terms and attribution.
+
 ## 0.1.1
 
 - Standardize the application name as Cardiac-Prism Workstation across the interface, documentation, exports, and package metadata.

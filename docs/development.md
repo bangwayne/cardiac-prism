@@ -16,11 +16,24 @@ Cardiac-Prism serves a static React/TypeScript frontend and a FastAPI API from o
 | `cardiac_prism/` | Vendored model architecture and original upstream components |
 | `scripts/` | Setup, asset acquisition, startup and verification tools |
 | `tests/` | Backend and browser regression tests |
-| `assets/` | Versioned asset metadata; large files are downloaded separately |
+| `assets/` | Versioned model and sample metadata with integrity checks |
+| `weight/` | Released checkpoint tracked with Git LFS and its matching JSON profile |
 
 Source-image and export geometry remain in the original grid. Model tensors are prepared separately. Browser display changes must not become model preprocessing operations.
 
 ## Development environment
+
+For code-only work, skip the model download when cloning:
+
+```bash
+GIT_LFS_SKIP_SMUDGE=1 git clone --branch main git@github.com:bangwayne/cardiac-prism.git
+cd cardiac-prism
+```
+
+Use `./scripts/setup.sh --device cpu --dev --skip-assets` to prepare tests without
+model or sample downloads. When real inference is needed, run
+`python3 scripts/download_assets.py --all` to install the verified assets. A normal
+clone without `GIT_LFS_SKIP_SMUDGE` retrieves the Git LFS checkpoint automatically.
 
 Install the native environment with development dependencies:
 
@@ -117,7 +130,7 @@ Before adding a dependency or copying code, record its source and license. Regen
 3. Exercise real CPU and GPU inference with the release checkpoint; verify selected-GPU jobs on supported hardware.
 4. Verify the public sample, NIfTI and supported DICOM imports, and 3D/4D navigation.
 5. Verify click/brush/erase, lock protection, propagation, save/restart, and full-backup restoration in a temporary workspace.
-6. Inspect the release archive for private images, weights outside the asset channel, credentials, local absolute paths, runtime state, and generated test output.
+6. Inspect the release archive for private images, unapproved checkpoints, credentials, local absolute paths, runtime state, and generated test output. Only the checkpoint identified in `assets/manifest.json` should be tracked through Git LFS.
 7. Record source version, asset checksums, dependency versions, and the installation paths actually tested.
 8. Update the changelog and release documentation. Publish only with the intended repository and asset visibility.
 

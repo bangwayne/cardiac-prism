@@ -26,17 +26,17 @@ def relative_file(root, name):
 
 def read_manifest(root, tag):
     if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?", tag):
-        raise ValueError("A version tag such as v0.1.1 is required.")
+        raise ValueError("A version tag such as v0.1.2 is required.")
     manifest = json.loads(relative_file(root, "assets/manifest.json").read_text())
     if manifest.get("schema_version") != 1 or manifest.get("release") != tag:
         raise ValueError("The selected source tag does not match its release manifest.")
     weights = [entry for entry in manifest["assets"] if entry["group"] == "weights"]
     refs = {entry.get("git_ref") for entry in weights}
     if len(refs) != 1:
-        raise ValueError("Release weights must specify one immutable model tag.")
+        raise ValueError("Release weights must specify one immutable version tag.")
     model_ref = refs.pop()
-    if not isinstance(model_ref, str) or not re.fullmatch(r"models/v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?", model_ref):
-        raise ValueError("Release weights must use a models/vX.Y.Z tag.")
+    if not isinstance(model_ref, str) or not re.fullmatch(r"(?:models/)?v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?", model_ref):
+        raise ValueError("Release weights must use an immutable version tag (vX.Y.Z or legacy models/vX.Y.Z).")
     return weights, model_ref
 
 
@@ -68,7 +68,7 @@ def assemble(root, models, output, tag):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path.cwd())
-    parser.add_argument("--models", type=Path, default=Path("model-assets"))
+    parser.add_argument("--models", type=Path, default=Path("model-files"))
     parser.add_argument("--output", type=Path, default=Path("release-assets"))
     parser.add_argument("--tag", required=True)
     parser.add_argument("--model-ref", action="store_true")

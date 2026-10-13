@@ -1,7 +1,7 @@
 name: cardiac-prism
 services:
   workstation:
-    image: cardiac-prism:0.1.1-cpu
+    image: cardiac-prism:0.1.2-cpu
     build:
       context: .
       args:

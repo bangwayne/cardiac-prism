@@ -134,14 +134,14 @@ def import_private_weights(asset: dict, target: Path, repository: Path) -> None:
     remote = run(["git", "-C", str(repository), "remote", "get-url", "origin"], "repository discovery")
     if not remote or remote.startswith("-"):
         raise AssetError("A valid Git origin is required to download private model assets.")
-    reference = asset.get("git_ref", "model-assets")
+    reference = asset.get("git_ref")
     if not isinstance(reference, str) or not reference or reference.startswith("-"):
-        raise AssetError("A valid model Git reference is required.")
+        raise AssetError("A versioned model Git reference is required in the asset manifest.")
     print("Release download requires repository access; using the authenticated model repository.", flush=True)
     with tempfile.TemporaryDirectory(prefix="cardiac-prism-model-") as directory:
         clone = Path(directory) / "repository"
         run(["git", "clone", "--quiet", "--depth", "1", "--single-branch", "--branch", reference,
-             "--", remote, str(clone)], "model-assets checkout")
+             "--", remote, str(clone)], "versioned model checkout")
         run(["git", "lfs", "pull", "--include", asset["path"], "--exclude", ""], "model transfer", cwd=clone)
         source = destination(clone, asset)
         import_weights(source, target, asset)
