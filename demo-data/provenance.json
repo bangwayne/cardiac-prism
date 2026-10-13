@@ -1,0 +1,35 @@
+[
+  {
+    "name": "patient001_4d.nii.gz",
+    "display_name": "ACDC patient 001 · cine MRI",
+    "phase": "4D cine",
+    "time_frames": 30,
+    "slices": 10,
+    "dataset": "ACDC",
+    "source_url": "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/file/63721d7073e9f0047faa0530/download",
+    "license": "CC-BY-NC-SA-4.0; ACDC additional research terms",
+    "preprocessing": "none",
+    "shape_xyzt": [
+      216,
+      256,
+      10,
+      30
+    ]
+  },
+  {
+    "name": "patient001_frame01.nii.gz",
+    "display_name": "ACDC patient 001 · end-diastole",
+    "phase": "End-diastole",
+    "time_frames": 1,
+    "slices": 10,
+    "dataset": "ACDC",
+    "source_url": "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/file/63721d7473e9f0047faa0534/download",
+    "license": "CC-BY-NC-SA-4.0; ACDC additional research terms",
+    "preprocessing": "none",
+    "shape_xyz": [
+      216,
+      256,
+      10
+    ]
+  }
+]

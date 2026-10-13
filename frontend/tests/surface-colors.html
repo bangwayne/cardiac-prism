@@ -1,0 +1,63 @@
+<!doctype html>
+<html><body style="margin:0;background:#080a0d"><div id="scene" style="width:360px;height:360px"></div>
+<script type="module">
+import '@kitware/vtk.js/Rendering/Profiles/Geometry';
+import vtkGenericRenderWindow from '@kitware/vtk.js/Rendering/Misc/GenericRenderWindow';
+import { makeSurface } from '../src/mesh';
+
+const view = vtkGenericRenderWindow.newInstance({ background: [.03, .04, .05] });
+view.setContainer(document.querySelector('#scene')); view.resize();
+const renderer = view.getRenderer(), camera = renderer.getActiveCamera();
+camera.setParallelProjection(true);
+const dimensions = [48, 46, 30], spacing = [.8, .9, 1.5];
+const colors = ['#f49a85', '#52d9bd', '#a697f4'];
+const source = new Uint8Array(dimensions.reduce((a, b) => a * b, 1));
+for (let z = 0; z < dimensions[2]; z++) for (let y = 0; y < dimensions[1]; y++) for (let x = 0; x < dimensions[0]; x++) {
+  if (((x - 21) / 14) ** 2 + ((y - 24) / 15) ** 2 + ((z - 13) / 10) ** 2 < 1
+      && !(x > 25 && y < 19 && z > 15)) source[(z * dimensions[1] + y) * dimensions[0] + x] = 1;
+}
+const oblique = [-.6762558016859209, -.7365010629026597, .015629300348536133,
+  .2780502928138937, -.23554416053014512, .9312394875144938,
+  -.6821774460712466, .634101869689418, .3640724528553291];
+let surface;
+window.renderSurface = async ({ reflected, smooth, color = 0, tilted = false, side = 1, opacity = 1, sameLocalGeometry = false }) => {
+  if (surface) { renderer.removeActor(surface.actor); surface.dispose(); }
+  const direction = tilted ? [...oblique] : [-1, 0, 0, 0, -1, 0, 0, 0, 1];
+  const origin = [-10, 20, -30], values = source.slice();
+  if (reflected) {
+    for (let i = 0; i < 3; i++) { origin[i] += direction[i] * (dimensions[0] - 1) * spacing[0]; direction[i] *= -1; }
+    if (!sameLocalGeometry) for (let z = 0; z < dimensions[2]; z++) for (let y = 0; y < dimensions[1]; y++) for (let x = 0; x < dimensions[0]; x++) {
+      values[(z * dimensions[1] + y) * dimensions[0] + x] = source[(z * dimensions[1] + y) * dimensions[0] + dimensions[0] - 1 - x];
+    }
+  }
+  const before = values.slice();
+  const project = { id: 'surface-colors', time: 0, dimensions, spacing, origin, direction };
+  let ready;
+  const smoothed = new Promise(resolve => { ready = resolve; });
+  surface = makeSurface(project, values, colors[color], ready);
+  surface.actor.getProperty().setOpacity(opacity);
+  renderer.addActor(surface.actor);
+  surface.setSmoothed(smooth);
+  if (smooth) await smoothed;
+  const center = [0, 1, 2].map(i => origin[i] + direction[i] * dimensions[0] * spacing[0] / 2
+    + direction[3+i] * dimensions[1] * spacing[1] / 2 + direction[6+i] * dimensions[2] * spacing[2] / 2);
+  const offset = sameLocalGeometry ? [0, 1, 2].map(i => direction[i] * 80 - direction[3+i] * 100 + direction[6+i] * 70) : [80, -100, 70];
+  camera.setFocalPoint(...center); camera.setPosition(...center.map((x, i) => x + side * offset[i]));
+  camera.setViewUp(...(sameLocalGeometry ? direction.slice(6, 9) : [0, 0, 1])); camera.setParallelScale(32);
+  renderer.resetCameraClippingRange(); view.getRenderWindow().render();
+  const canvas = view.getRenderWindow().getViews()[0].getCanvas();
+  const copy = document.createElement('canvas'); copy.width = canvas.width; copy.height = canvas.height;
+  const context = copy.getContext('2d'); context.drawImage(canvas, 0, 0);
+  const raw = context.getImageData(0, 0, copy.width, copy.height).data;
+  const pixels = Array.from(raw);
+  // Reflecting both the geometry and camera reverses screen handedness.
+  if (sameLocalGeometry && reflected) for (let y = 0; y < copy.height; y++) for (let x = 0; x < copy.width; x++) {
+    const from = (y * copy.width + copy.width - 1 - x) * 4, to = (y * copy.width + x) * 4;
+    for (let c = 0; c < 4; c++) pixels[to+c] = raw[from+c];
+  }
+  return { pixels, bounds: surface.actor.getBounds(), color: surface.actor.getProperty().getColor(),
+    inputUnchanged: before.every((x, i) => values[i] === x), smoothingReady: surface.smoothingReady,
+    material: ['Ambient', 'Diffuse', 'Specular', 'SpecularPower'].map(name => surface.actor.getProperty()['get' + name]()) };
+};
+window.surfaceColorsReady = true;
+</script></body></html>

@@ -1,0 +1,5 @@
+pip==24.0
+setuptools==69.5.1
+wheel==0.43.0
+ninja==1.11.1.1
+

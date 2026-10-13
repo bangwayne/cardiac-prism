@@ -1,0 +1,18 @@
+services:
+  workstation:
+    image: cardiac-prism:0.1.0-cuda11.7
+    build:
+      args:
+        TORCH_VARIANT: cu117
+    environment:
+      KPRISM_DEVICE: "${KPRISM_DEVICE:-cuda:0}"
+      NVIDIA_VISIBLE_DEVICES: "${NVIDIA_VISIBLE_DEVICES:-all}"
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+

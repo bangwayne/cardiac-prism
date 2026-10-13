@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #111; }
+
+#root {
+  display: inline-grid;
+  grid-template-areas:
+    "view ybar"
+    "xbar corner";
+}
+
+/* ── Main image viewport ─────────────────────────────────── */
+#view {
+  grid-area: view;
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#view.dragging { cursor: grabbing; }
+canvas { display: block; }
+
+/* ── Vertical scroll bar (right side, full canvas height) ─── */
+#ybar {
+  grid-area: ybar;
+  width: 18px;
+  background: #2a2a2a;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 2px 0;
+}
+#yslider {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  writing-mode: vertical-lr;
+  direction: rtl;          /* 0 = thumb at top = image top */
+  width: 14px;
+  flex: 1;
+  cursor: pointer;
+  accent-color: #4a9eff;
+  background: transparent;
+}
+
+/* ── Horizontal scroll bar (bottom) ─────────────────────────── */
+#xbar {
+  grid-area: xbar;
+  height: 18px;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+}
+#xslider {
+  flex: 1;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #4a9eff;
+}
+
+/* ── Corner ──────────────────────────────────────────────────── */
+#corner {
+  grid-area: corner;
+  width: 18px;
+  height: 18px;
+  background: #2a2a2a;
+}
+
+/* ── HUD ─────────────────────────────────────────────────────── */
+#hud {
+  position: absolute;
+  top: 4px; right: 4px;
+  background: rgba(0,0,0,.55);
+  color: #ccc;
+  font: 11px/1.4 monospace;
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+<div id="root">
+  <div id="view">
+    <canvas id="c"></canvas>
+    <div id="hud"></div>
+  </div>
+  <div id="ybar"><input id="yslider" type="range" orient="vertical"></div>
+  <div id="xbar"><input id="xslider" type="range"></div>
+  <div id="corner"></div>
+</div>
+
+<script>
+(function () {
+  // ── Streamlit Component protocol v1 ───────────────────────────────────
+  // IMPORTANT: isStreamlitMessage:true is required — Streamlit ignores
+  // any postMessage that does not include this field.
+  function post(type, extra) {
+    window.parent.postMessage(
+      Object.assign({ isStreamlitMessage: true, type: type }, extra || {}),
+      '*'
+    );
+  }
+  function ready()      { post('streamlit:componentReady', { apiVersion: 1 }); }
+  function setHeight(h) { post('streamlit:setFrameHeight', { height: h }); }
+  function setValue(v)  {
+    post('streamlit:setComponentValue', {
+      value: v, dataType: null, isAttachment: false
+    });
+  }
+
+  // ── DOM ───────────────────────────────────────────────────────────────
+  var root    = document.getElementById('root');
+  var view    = document.getElementById('view');
+  var canvas  = document.getElementById('c');
+  var ctx     = canvas.getContext('2d');
+  var xslider = document.getElementById('xslider');
+  var yslider = document.getElementById('yslider');
+  var hud     = document.getElementById('hud');
+
+  // ── State ─────────────────────────────────────────────────────────────
+  var props   = null;
+  var img     = null;
+  var imgSrc  = '';
+  var xOff    = 0;
+  var yOff    = 0;
+  var drag    = null;   // { startX, startY, sx, sy }
+  var hasPan  = false;
+
+  // ── Props from Streamlit ──────────────────────────────────────────────
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || d.type !== 'streamlit:render') return;
+    props  = d.args;
+    xOff   = props.x_off  || 0;
+    yOff   = props.y_off  || 0;
+    hasPan = props.max_x_off > 0 || props.max_y_off > 0;
+
+    var vw = props.viewport_w;
+    var vh = props.viewport_h;
+    canvas.width  = vw;
+    canvas.height = vh;
+    view.style.width  = vw + 'px';
+    view.style.height = vh + 'px';
+
+    var showX = props.max_x_off > 0;
+    var showY = props.max_y_off > 0;
+    document.getElementById('xbar').style.display   = showX ? '' : 'none';
+    document.getElementById('ybar').style.display   = showY ? '' : 'none';
+    document.getElementById('corner').style.display = (showX && showY) ? '' : 'none';
+
+    var totalW = vw + (showY ? 18 : 0);
+    var totalH = vh + (showX ? 18 : 0);
+    root.style.width  = totalW + 'px';
+    root.style.height = totalH + 'px';
+    setHeight(totalH + 4);
+
+    // Scrollbar config
+    xslider.min   = 0;
+    xslider.max   = props.max_x_off;
+    xslider.step  = Math.max(1, Math.round(vw / 40));
+    xslider.value = xOff;
+
+    yslider.min   = 0;
+    yslider.max   = props.max_y_off;
+    yslider.step  = Math.max(1, Math.round(vh / 40));
+    yslider.style.height = vh + 'px';
+    yslider.value = yOff;
+
+    // Load image only when src changes
+    if (props.image_b64 !== imgSrc) {
+      imgSrc = props.image_b64;
+      var newImg = new Image();
+      newImg.onload = function() { img = newImg; draw(); };
+      newImg.src = 'data:image/jpeg;base64,' + props.image_b64;
+    } else {
+      draw();
+    }
+    updateHud();
+  });
+
+  // ── Render ────────────────────────────────────────────────────────────
+  function draw() {
+    if (!img || !props) return;
+    ctx.drawImage(
+      img,
+      xOff, yOff, props.viewport_w, props.viewport_h,
+      0,    0,    props.viewport_w, props.viewport_h
+    );
+  }
+
+  function updateHud() {
+    if (!props) return;
+    if (hasPan) {
+      hud.textContent = 'x:' + xOff + '  y:' + yOff + '   drag to pan';
+      hud.style.display = '';
+    } else {
+      hud.style.display = 'none';
+    }
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, Math.round(v))); }
+
+  function syncSliders() {
+    xslider.value = xOff;
+    yslider.value = yOff;
+  }
+
+  // ── Mouse drag ────────────────────────────────────────────────────────
+  view.addEventListener('mousedown', function(e) {
+    if (!hasPan) return;
+    drag = { startX: e.clientX, startY: e.clientY, sx: xOff, sy: yOff };
+    view.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!drag || !props) return;
+    xOff = clamp(drag.sx - (e.clientX - drag.startX), 0, props.max_x_off);
+    yOff = clamp(drag.sy - (e.clientY - drag.startY), 0, props.max_y_off);
+    syncSliders(); draw(); updateHud();
+  });
+
+  window.addEventListener('mouseup', function() {
+    if (!drag) return;
+    drag = null;
+    view.classList.remove('dragging');
+    setValue({ x_off: xOff, y_off: yOff });
+  });
+
+  // ── Touch drag ────────────────────────────────────────────────────────
+  view.addEventListener('touchstart', function(e) {
+    if (!hasPan) return;
+    var t = e.touches[0];
+    drag = { startX: t.clientX, startY: t.clientY, sx: xOff, sy: yOff };
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('touchmove', function(e) {
+    if (!drag || !props) return;
+    var t = e.touches[0];
+    xOff = clamp(drag.sx - (t.clientX - drag.startX), 0, props.max_x_off);
+    yOff = clamp(drag.sy - (t.clientY - drag.startY), 0, props.max_y_off);
+    syncSliders(); draw(); updateHud();
+    e.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('touchend', function() {
+    if (!drag) return;
+    drag = null;
+    setValue({ x_off: xOff, y_off: yOff });
+  });
+
+  // ── Scroll bar inputs ─────────────────────────────────────────────────
+  xslider.addEventListener('input',  function() { xOff = parseInt(xslider.value, 10); draw(); updateHud(); });
+  xslider.addEventListener('change', function() { xOff = parseInt(xslider.value, 10); draw(); updateHud(); setValue({ x_off: xOff, y_off: yOff }); });
+
+  yslider.addEventListener('input',  function() { yOff = parseInt(yslider.value, 10); draw(); updateHud(); });
+  yslider.addEventListener('change', function() { yOff = parseInt(yslider.value, 10); draw(); updateHud(); setValue({ x_off: xOff, y_off: yOff }); });
+
+  // ── Send ready last ───────────────────────────────────────────────────
+  ready();
+})();
+</script>
+</body>
+</html>

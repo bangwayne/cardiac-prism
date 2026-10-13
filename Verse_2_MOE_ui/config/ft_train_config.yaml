@@ -1,0 +1,41 @@
+defaults:
+  - _self_
+  - data: base
+  - model: base
+
+training:
+  iter_num: 1
+  training_click_mode: ['1', '2', '3']
+  sampling_probs: [0.3, 0.5, 0.2]
+  click_loss_weight: 0.8
+  num_ref: 3
+
+  node_rank: 0
+  num_nodes: 1
+  work_dir: "./training-runs"
+  resume: None
+  port: '9997'
+  gpus: [3,4,5,6]
+  init_method: "env://"
+  bucket_cap_md: 25
+  epochs: 100
+  batch_size: 8
+  num_workers: 4
+  if_training: "train"
+  run_id: ""
+  model_save_path: ""
+  ngpus: ""
+
+solver:
+  base_lr: 0.00001
+  weight_decay: 0.0
+  warmup_epochs: 0
+  end_lr_ratio: 1
+
+
+
+
+
+
+
+

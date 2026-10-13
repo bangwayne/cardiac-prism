@@ -1,0 +1,68 @@
+model:
+  backbone:
+    in_channels: 3
+    base_channels: 48
+    reduce_size: 8
+    block_list: '1234'
+    num_blocks: [1, 1, 1, 1]
+    projection: 'interp'
+    num_heads: [4, 4, 4, 4]
+    attn_drop: 0.1
+    proj_drop: 0.1
+    bottleneck: False
+    maxpool: False
+    rel_pos: True
+    out_feature_strides: { "res3": 8, "res4": 16, "res5": 32}
+    out_feature_channels: { "res3": 96, "res4": 192, "res5": 384}
+  mask_encoder:
+    in_channels: 4
+    base_channels: 48
+    out_feature_strides: ${model.model.backbone.out_feature_strides}
+    out_feature_channels: ${model.model.backbone.out_feature_channels}
+  object_summarizer:
+    embed_dim: 256
+    num_summaries: 6
+#    num_ref: ${training.num_ref}
+    num_ref: 1
+    add_pe: True
+    pixel_pe_scale: 32
+    pixel_pe_temperature: 128
+    feature_idx: {"res5": 0, "res4":1, "res3": 2}
+  task_encoder:
+    in_channels: 256
+    # keep in channels = conv_dims
+    embed_dim: 256
+    num_queries: 2
+    num_heads: 8
+    dim_feedforward: 256
+    dec_layers: 1
+    num_classes: 33
+    num_class: 33
+  transformer_decoder:
+    in_channels: 256
+    hidden_dim: 256
+    mask_dim: 256
+    dec_layers: 6
+    dim_feedforward: 256
+    nheads: 8
+    rescale: [16,8,4]
+    num_experts: 5
+    # Stable initialization for click modules absent from legacy checkpoints.
+    click_prompt_seed: 0
+  sem_seg_head:
+    in_features: ["res3", "res4", "res5"]
+    conv_dim: 256
+    num_classes: 33
+    transformer_in_feature: ${model.model.sem_seg_head.in_features}
+
+setting:
+  image_size: [512, 512]
+  long_side_size: 512
+  size_divisibility: 32
+  pixel_mean: [0.0, 0.0, 0.0]
+  pixel_std: [1.0, 1.0, 1.0]
+  point_sample_method: "largest_component"
+  dice_weight: 1.0
+  mask_weight: 1.0
+
+

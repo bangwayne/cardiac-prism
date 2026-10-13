@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "release": "v0.1.0",
+  "assets": [
+    {
+      "id": "cardiac-model",
+      "group": "weights",
+      "git_ref": "models/v0.1.0",
+      "path": "weight/cardiac_achilleas_epoch10.pth",
+      "url": "https://github.com/bangwayne/cardiac-prism/releases/download/v0.1.0/cardiac_achilleas_epoch10.pth",
+      "size": 178498401,
+      "sha256": "2ba5f7c3a33e798ec5533184e0fe0fed7af4e565f0a5e8ae3bfb3a15a5f0e703",
+      "license": "PolyForm-Noncommercial-1.0.0",
+      "profile": "weight/cardiac_achilleas_epoch10.json"
+    },
+    {
+      "id": "acdc-cine",
+      "group": "sample",
+      "path": "demo-data/images/patient001_4d.nii.gz",
+      "url": "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/file/63721d7073e9f0047faa0530/download",
+      "size": 15713860,
+      "sha256": "2630fcede25328c13a15c4dfe6376c068201eb1f8d871736cd8197c2b1463ed3",
+      "license": "CC-BY-NC-SA-4.0; ACDC additional research terms"
+    },
+    {
+      "id": "acdc-end-diastole",
+      "group": "sample",
+      "path": "demo-data/images/patient001_frame01.nii.gz",
+      "url": "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/file/63721d7473e9f0047faa0534/download",
+      "size": 551178,
+      "sha256": "725bdab01314e1e255157aae9d0be8218b7a76736c343485725b60a4d6f324ad",
+      "license": "CC-BY-NC-SA-4.0; ACDC additional research terms"
+    },
+    {
+      "id": "acdc-reference",
+      "group": "sample",
+      "path": "demo-data/references/patient001_frame01_gt.nii.gz",
+      "url": "https://humanheart-project.creatis.insa-lyon.fr/database/api/v1/file/63721d7473e9f0047faa0538/download",
+      "size": 6596,
+      "sha256": "c1980730f28b337d80162c11f93084860c77089804f2e4b0f6d5e313c73e1ebc",
+      "license": "CC-BY-NC-SA-4.0; ACDC additional research terms"
+    }
+  ]
+}

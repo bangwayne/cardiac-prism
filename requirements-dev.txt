@@ -1,0 +1,7 @@
+-r requirements-model.txt
+# Used to compare the released preprocessing with its training implementation.
+albumentations==1.4.6
+monai==0.9.0
+scikit-image==0.23.2
+scikit-learn==1.4.2
+

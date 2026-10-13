@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this workstation, cite this software and the K-Prism method. Cite ACDC separately when using its sample data."
+type: software
+title: "Cardiac Prism Workstation"
+authors:
+  - family-names: Guo
+    given-names: Bangwei
+  - name: "Cardiac Prism contributors"
+version: 0.1.0
+url: "https://github.com/bangwayne/cardiac-prism"
+repository-code: "https://github.com/bangwayne/cardiac-prism"
+license: PolyForm-Noncommercial-1.0.0
+abstract: "A self-hosted workstation for 3D and 4D cardiac MR viewing, interactive segmentation, temporal propagation, annotation refinement, and study management."
+keywords:
+  - cardiac MRI
+  - interactive segmentation
+  - medical image annotation
+  - cine MRI
+references:
+  - type: conference-paper
+    title: "K-Prism: A Knowledge-Guided and Prompt Integrated Universal Medical Image Segmentation Model"
+    authors:
+      - family-names: Guo
+        given-names: Bangwei
+      - family-names: Gao
+        given-names: Yunhe
+      - family-names: Ye
+        given-names: Meng
+      - family-names: Gu
+        given-names: Difei
+      - family-names: Zhou
+        given-names: Yang
+      - family-names: Axel
+        given-names: Leon
+      - family-names: Metaxas
+        given-names: Dimitris N.
+    year: 2026
+    collection-title: "The Fourteenth International Conference on Learning Representations"
+    url: "https://openreview.net/forum?id=gvRf95K4im"

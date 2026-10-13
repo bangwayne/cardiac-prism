@@ -1,0 +1,16 @@
+# HTTP service and NIfTI/DICOM I/O.
+-c requirements-lock.txt
+fastapi==0.115.12
+uvicorn==0.34.2
+starlette==0.46.2
+pydantic==2.7.1
+python-multipart==0.0.20
+httpx==0.27.0
+pydicom==3.0.1
+numpy==1.26.4
+SimpleITK==2.3.1
+opencv-python-headless==4.9.0.80
+scipy==1.13.0
+Pillow==10.3.0
+PyYAML==6.0.1
+

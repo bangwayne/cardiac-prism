@@ -1,0 +1,41 @@
+defaults:
+  - _self_
+  - data: base
+  - model: base
+
+
+# these parameters, when set, override the dataset's default; useful for debugging
+testing:
+  debug: False
+  iter_num: 5
+  testing_click_mode: ['3']
+  draw_plot: True
+  node_rank: 0
+  num_ref:  2
+  num_nodes: 1
+  work_dir: "runtime/model"
+  # resume: None
+  resume: "../../weight/cardiac_achilleas_epoch10.pth"
+  port: '9993'
+  gpus: [0]
+  init_method: "env://"
+  bucket_cap_md: 25
+
+  batch_size: 8
+  num_workers: 2
+  if_training: "test"
+  run_id: ""
+  model_save_path: ""
+  ngpus: ""
+
+#dataset:
+#  dataset_name: "ACDC"
+#  data_config: ${data.data_config}
+#  ref_mode: "one_shot"
+
+dataset:
+  dataset_path: "demo-data"
+  dataset_name: "ACDC"
+  data_config: ${data.data_config}
+  ref_mode: "one_shot"
+

@@ -1,0 +1,79 @@
+Cardiac Prism Workstation
+Required Notice: Copyright (c) 2026 Bangwei Guo and Cardiac Prism contributors.
+
+LICENSE SCOPE
+
+Original Cardiac Prism workstation code, documentation, packaging, and the
+Cardiac Prism checkpoint identified in assets/manifest.json are distributed
+under the PolyForm Noncommercial License 1.0.0 in LICENSE, except where a file
+or component carries different terms. Academic research and other permitted
+noncommercial purposes are covered by that license. Commercial uses outside
+its permitted purposes require separate permission from the rights holders.
+
+The project is source-available. Its noncommercial license is not an
+OSI-approved open-source license. No new restriction is imposed on rights
+already granted in separately licensed upstream components.
+
+The following exclusions and attributions are part of this distribution:
+
+1. K-Prism model implementation
+   Source: https://github.com/bangwayne/K-Prism
+   Copyright (c) 2025 bangwayne.
+   The original K-Prism portions of Verse_2_MOE_ui/ retain the MIT License,
+   reproduced in licenses/K-Prism-MIT.txt. The workstation adapter preserves
+   this model's architecture and includes changes for checkpoint loading,
+   deterministic click features, and interactive inference. Components derived
+   from the projects below retain their own copyright and license notices.
+
+2. UTNet
+   Source: https://github.com/yhygao/UTNet
+   Copyright (c) 2021 yhygao.
+   Adapted backbone code in Verse_2_MOE_ui/modeling/backbone/ retains the MIT
+   License in licenses/UTNet-MIT.txt.
+
+3. Swin Transformer
+   Source: https://github.com/microsoft/Swin-Transformer
+   Copyright (c) Microsoft Corporation.
+   Relative-position code acknowledged in
+   Verse_2_MOE_ui/modeling/backbone/conv_trans_utils.py derives from this project.
+   Its MIT License is reproduced in licenses/Swin-Transformer-MIT.txt.
+
+4. Cutie
+   Source: https://github.com/hkchengrex/Cutie
+   Copyright (c) 2024 Ho Kei Cheng.
+   Object-summary and positional-encoding components in
+   Verse_2_MOE_ui/modeling/task_encoder/object_summarier.py include adapted
+   Cutie code. Its MIT License is reproduced in licenses/Cutie-MIT.txt.
+
+5. Mask2Former
+   Source: https://github.com/facebookresearch/Mask2Former
+   Copyright (c) 2022 Meta, Inc.; Facebook, Inc. and its affiliates.
+   Model-head and transformer-related portions retain their existing notices.
+   The MIT License is reproduced in licenses/Mask2Former-MIT.txt.
+
+6. Segment Anything, DETR, Detectron2, and ConvNeXt
+   Sources:
+   https://github.com/facebookresearch/segment-anything
+   https://github.com/facebookresearch/detr
+   https://github.com/facebookresearch/detectron2
+   https://github.com/facebookresearch/ConvNeXt
+   Copyright Meta Platforms, Inc., Facebook, Inc., and their affiliates,
+   as identified in the individual source files.
+   Adapted components include Verse_2_MOE_ui/modeling/point_encoder/common.py
+   and Verse_2_MOE_ui/utils/misc.py. Their Apache License 2.0 is reproduced
+   in licenses/Apache-2.0.txt. Original notices remain in the source files.
+
+7. Public ACDC sample data
+   The optional sample download has separate terms and mandatory attribution.
+   See licenses/ACDC-LICENSE-TERMS.md, licenses/ACDC-MANDATORY-CITATION.md,
+   and docs/sample-data.md. The workstation license does not replace these
+   data terms. No private clinical cases are included in the source repository.
+
+8. Installed dependencies
+   React, Cornerstone3D, vtk.js, FastAPI, PyTorch, SimpleITK, pydicom, dcm2niix,
+   and other dependencies retain their respective licenses. Frontend notices
+   are collected in THIRD_PARTY_NOTICES.txt. Package distributions and any
+   container base image include additional notices for their own components.
+
+Keep this notice, LICENSE, applicable files in licenses/, and source-file
+copyright notices when redistributing covered materials.

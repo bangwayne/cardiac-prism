@@ -1,0 +1,415 @@
+dataset_path: "./datasets"
+num_ref: ${model.model.object_summarizer.num_ref}
+dataset_list: ["AMOS_MRI", "AMOS_CT"]
+# dataset_list: ["ACDC"]
+dataset_weight: {
+                  "AMOS_MRI": 0.3,
+                  "AMOS_CT": 0.05,
+                  "MM": 0.1,
+                  "Chest_Xray_Masks_and_Labels": 0.1,
+                  "ISIC": 0.08,
+                  "LITS": 0.1,
+                  "KITS": 0.1,
+                  "PAPILA": 0.3,
+                  "BKAI_POLY": 0.2,
+                  "Breast_cancer": 0.2,
+                  "KPI": 0.05,
+                  "LASCARQS": 0.04,
+                }
+## fine_tune stage
+#dataset_weight: {
+#                  "AMOS_MRI": 0.5,
+#                  "AMOS_CT": 0.1,
+#                  "MM": 0.2,
+#                  "Chest_Xray_Masks_and_Labels": 0.02,
+#                  "ISIC": 0.03,
+#                  "LITS": 0.2,
+#                  "KITS": 0.2,
+#                  "PAPILA": 0.1,
+#                  "BKAI_POLY": 0.1,
+#                  "Breast_cancer": 0.1,
+#                  "KPI": 0.1,
+#                  "LASCARQS": 0.05,
+#                }
+# ablation study
+# dataset_weight: {
+#                   "MM": 0.1,
+#                   "ACDC": 0.1,
+#                   "Breast_cancer": 0.4,
+# #                  "LASCARQS": 0.04,
+#                 }
+#dataset_weight: {
+#                  "AMOS_MRI": 0.12,
+#                  "AMOS_CT": 0.04,
+#                  "MM": 0.05,
+#                  "Brain": 0.01,
+#                  "Chest_Xray_Masks_and_Labels": 0.2,
+#                  "ISIC": 0.1,
+#                  "LITS": 0.04,
+#                  "KPI": 0.06,
+#}
+#dataset_weight: {
+#                  "AMOS_MRI": 0.2,
+#                  "AMOS_CT": 0.2,
+#                  "MM": 0.2,
+#                  "Brain": 0.05,
+#                  "Chest_Xray_Masks_and_Labels": 0.02,
+#                  "ISIC": 0.02,
+#                  "LITS": 0.1,
+#                  "KPI": 0.02,
+#}
+#data_config:
+#  {
+#    "MM": { "ndim": 3,
+#            "unique_labels": [1, 2, 3],
+#            "query_mapping": {1: [1, "Right Ventricle"],
+#                              2: [2, "Myocardium"],
+#                              3: [3, "Left Ventricle"]}
+#          }
+#  }
+#  AMOS_MRI: 5456 slices
+#  AMOS_CT: 35633 slices
+#  MM: 2475  slices
+#  Chest_Xray_Masks_and_Labels: 450 slices
+#  ISIC: 2694 slices
+#  LITS: 16196 slices
+#  KPI: 8761 slices
+#  KITS: 14583 slices
+#  BKAI_POLY: 800 slices
+#  PAPILA: 390 slices
+#  Breast Cancer: 518 slices
+#  LASCAQS: 8000 slices
+
+## OOD
+# MnM2, oaizib, brainTS20, Chest_Xray, Maybe a CT dataset
+
+data_config:
+  AMOS_MRI:
+    ndim: 3
+    unique_labels: [1,2,3,4,5,6,7,8,9,10,11,12,13]
+    query_mapping:
+      1: [ 1, "Spleen" ]
+      2: [ 2, "Right Kidney" ]
+      3: [ 3, "Left Kidney" ]
+      4: [ 4, "Gall Bladder" ]
+      5: [ 5, "Esophagus" ]
+      6: [ 6, "Liver" ]
+      7: [ 7, "Stomach" ]
+      8: [ 8, "Aorta" ]
+      9: [ 9, "Inferior Vena Cava" ]
+      10: [ 10, "Pancreas" ]
+      11: [ 11, "Right Adrenal Gland" ]
+      12: [ 12, "Left Adrenal Gland" ]
+      13: [ 13, "Duodenum" ]
+      14: [ 14, "Bladder" ]
+      15: [ 15, "Prostate/Uterus" ]
+  AMOS_CT:
+    ndim: 3
+    unique_labels: [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ]
+    query_mapping:
+      1: [ 1, "Spleen" ]
+      2: [ 2, "Right Kidney" ]
+      3: [ 3, "Left Kidney" ]
+      4: [ 4, "Gall Bladder" ]
+      5: [ 5, "Esophagus" ]
+      6: [ 6, "Liver" ]
+      7: [ 7, "Stomach" ]
+      8: [ 8, "Aorta" ]
+      9: [ 9, "Inferior Vena Cava" ]
+      10: [ 10, "Pancreas" ]
+      11: [ 11, "Right Adrenal Gland" ]
+      12: [ 12, "Left Adrenal Gland" ]
+      13: [ 13, "Duodenum" ]
+      14: [ 14, "Bladder" ]
+      15: [ 15, "Prostate/Uterus" ]
+  # Brain:
+  #   ndim: 3
+  #   unique_labels: [1,2,3]
+  #   query_mapping:
+  #     1: [ 19, "Gray Matter" ]
+  #     2: [ 20, "White Matter" ]
+  #     3: [ 21, "CSF"]
+  BTCV:
+    ndim: 3
+    unique_labels: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13 ]
+    query_mapping:
+      1: [ 1,  "Spleen" ]
+      2: [ 2,  "Right Kidney" ]
+      3: [ 3,  "Left Kidney" ]
+      4: [ 4,  "Gall Bladder" ]
+      5: [ 5,  "Esophagus" ]
+      6: [ 6,  "Liver" ]
+      7: [ 7,  "Stomach" ]
+      8: [ 8,  "Aorta" ]
+      9: [ 9,  "Inferior Vena Cava" ]
+#      10: [ 16, "Portal and Splenic Vein" ]  # 原始10 → 16
+      11: [ 10, "Pancreas" ]
+      12: [ 11, "Right Adrenal Gland" ]
+      13: [ 12, "Left Adrenal Gland" ]
+  MM:
+    ndim: 3
+    unique_labels: [1, 2, 3]
+    query_mapping:
+      1: [16, "Right Ventricle"]
+      2: [17, "Myocardium"]
+      3: [18, "Left Ventricle"]
+  MnM2:
+    ndim: 3
+    unique_labels: [ 1, 2, 3 ]
+    query_mapping:
+      1: [16, "Right Ventricle"]
+      2: [17, "Myocardium"]
+      3: [18, "Left Ventricle"]
+  ACDC:
+    ndim: 3
+    unique_labels: [1, 2, 3]
+    query_mapping:
+      1: [16, "Right Ventricle"]
+      2: [17, "Myocardium"]
+      3: [18, "Left Ventricle"]
+#  BraTS20:
+#    ndim: 3
+#    unique_labels: [ 1, 2, 4 ]
+#    query_mapping:
+#      1: [ 20, "Necrosis" ]
+#      2: [ 21, "Enhancing Tumor" ]
+#      4: [ 22, "Edema" ]
+  LASCARQS:
+    ndim: 3
+    unique_labels: [6]
+    query_mapping:
+      6: [ 19, "Left Atirnum" ]
+  Chest_Xray_Masks_and_Labels:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      255: [ 20, "Lung" ]
+  ISIC:
+    ndim: 2
+    unique_labels: [255]
+    query_mapping:
+      255: [ 21, "Skin Cancer" ]
+  LITS:
+    ndim: 3
+    unique_labels: [2]
+    query_mapping:
+#      1: [ 6, "Liver" ]
+      2: [ 22, "Liver Tumor" ]
+  KITS:
+    ndim: 3
+    unique_labels: [2]
+    query_mapping:
+#      1: [ 6, "Kidney" ]
+      2: [ 23, "Kidney Tumor" ]
+  Uwaterloo_skin_cancer:
+    ndim: 2
+    unique_labels: [1]
+    query_mapping:
+      1: [ 21, "Skin Cancer" ]
+  BKAI_POLY:
+    ndim: 2
+    unique_labels: [ 100, 200 ]
+    query_mapping:
+      100: [ 24, "neoplastic polyps" ]
+      200: [ 25, "non-neoplastic polyps" ]
+  Breast_cancer:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      255: [ 26, "Breast Tumor" ]
+  KPI:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      255: [ 27, "Glomeruli" ]
+  PAPILA:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      255: [28, "Optic Disc"]
+  BUS:
+    ndim: 2
+    unique_labels: [ 1 ]
+    query_mapping:
+      1: [ 26, "Breast Tumor"  ]
+  Pancreas:
+    ndim: 3
+    unique_labels: [ 2 ]
+    query_mapping:
+      #      1: [ 6, "Kidney" ]
+      2: [ 29, "Pancreas Tumor" ]
+  DRIVE:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      #      1: [ 6, "Kidney" ]
+      255: [ 30, "Retinal Vessel" ]
+  OAIZIB:
+    ndim: 2
+    unique_labels: [ 128, 255 ]
+    query_mapping:
+      128: [ 16, "knee bone1" ]
+      255: [ 17, "knee bone2" ]
+  BraTS:
+    ndim: 2
+    unique_labels: [255 ]
+    query_mapping:
+      255: [ 33, "brain tumor" ]
+  Glas:
+    ndim: 2
+    unique_labels: [ 255 ]
+    query_mapping:
+      255: [ 33, "brain tumor" ]
+
+#dataset_info:
+#  ACDC:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,3]
+#    label_names: [ "Right Ventricle", "Myocardium", "Left Ventricle" ]
+#    mapping_label: [ 17, 18, 19 ]
+#
+#  AMOS_MRI:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#    label_names: ["Spleen", "Right Kidney", "Left Kidney", "Gall Bladder", "Esophagus", "Liver", "Stomach",
+#    "Aorta", "Inferior Vena Cava", " Pancreas", "Right Adrenal Gland", "Left Adrenal Gland", "Duodenum", "Bladder", "Prostate/Uterus"]
+#    mapping_label: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#
+#  AMOS_CT:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#    label_names: ["Spleen", "Right Kidney", "Left Kidney", "Gall Bladder", "Esophagus", "Liver", "Stomach",
+#    "Aorta", "Inferior Vena Cava", " Pancreas", "Right Adrenal Gland", "Left Adrenal Gland", "Duodenum", "Bladder", "Prostate/Uterus"]
+#    mapping_label: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]
+#
+#  BTCV:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,3,4,5,6,7,8,9,10,11,12,13]
+#    label_names: [ "Spleen", "Right Kidney", "Left Kidney", "Gall Bladder", "Esophagus", "Liver", "Stomach",
+#                   "Aorta", "Inferior Vena Cava", "Portal and Splenic Vein", " Pancreas", "Right Adrenal Gland", "Left Adrenal Gland"]
+#    mapping_label: [1,2,3,4,5,6,7,8,9,16,10,11,12]
+#
+#  MM:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,3]
+#    label_names: ["Right Ventricle", "Myocardium", "Left Ventricle"]
+#    mapping_label: [17, 18, 19]
+#
+#  MM2:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 1,2,3 ]
+#    label_names: [ "Right Ventricle", "Myocardium", "Left Ventricle" ]
+#    mapping_label: [ 17, 18, 19 ]
+#
+#  BraTS20:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2,4]
+#    label_names: [ "Necrosis", "Enhancing Tumor", "Edema" ]
+#    mapping_label: [ 20, 21, 22 ]
+#
+#  Brain:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 1,2,3 ]
+#    label_names: [ "Gray Matter", "White Matter", "CSF" ]
+#    mapping_label: [ 23, 24, 25 ]
+#
+#  LASCARQS:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [6]
+#    label_names: [ "Left" ]
+#    mapping_label: [26]
+#
+#  Chest_Xray_Masks_and_Labels:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [255]
+#    label_names: ["Lung"]
+#    mapping_label: [ 27 ]
+#
+#  ISIC:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 255 ]
+#    label_names: ["Skin Cancer"]
+#    mapping_label: [28]
+#
+#  LITS:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1,2]
+#    label_names: [ "Liver", "Liver Tumor" ]
+#    mapping_label: [6,29]
+#
+#  Uwaterloo_skin_cancer:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [1]
+#    label_names: ["Skin Cancer"]
+#    mapping_label: [ 28 ]
+#
+#  BKAI_POLY:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 100, 200 ]
+#    label_names: ["neoplastic polyps", "non-neoplastic polyps"]
+#    mapping_label: [ 30, 31 ]
+#
+#  IDRID:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 1 ]
+#    label_names: ["Optic Disc"]
+#    mapping_label: [32]
+#
+#  PAPILA:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ "?" ]
+#    label_names: [ "Optic Disc" ]
+#    mapping_label: [ 32 ]
+#
+#  KPI:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 255 ]
+#    label_names: [ "Glomeruli" ]
+#    mapping_label: [ 33 ]
+#
+#  Breast_cancer:
+#    weight: 0.2
+#    image_directory: DAVIS/2017/trainval/JPEGImages/480p
+#    mask_directory: DAVIS/2017/trainval/Annotations/480p
+#    labels: [ 255 ]
+#    label_names: [ "Breast Tumor(U)" ]
+#    mapping_label: [ 34 ]
+
+
+
+
+

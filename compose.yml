@@ -1,0 +1,29 @@
+name: cardiac-prism
+services:
+  workstation:
+    image: cardiac-prism:0.1.0-cpu
+    build:
+      context: .
+      args:
+        TORCH_VARIANT: cpu
+    init: true
+    restart: unless-stopped
+    user: "${KPRISM_UID:-1000}:${KPRISM_GID:-1000}"
+    ports:
+      - "${KPRISM_BIND:-127.0.0.1}:${KPRISM_PORT:-8502}:8502"
+    environment:
+      KPRISM_DEVICE: cpu
+      KPRISM_CPU_THREADS: "${KPRISM_CPU_THREADS:-2}"
+      KPRISM_PRELOAD: "${KPRISM_PRELOAD:-0}"
+      KPRISM_GZIP_LEVEL: "1"
+    volumes:
+      - ./workspace:/data/workspace
+      - ./weight:/app/weight:ro
+      - ./demo-data:/app/demo-data:ro
+    shm_size: 1gb
+    stop_grace_period: 120s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
