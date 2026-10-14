@@ -18,6 +18,11 @@ The release uses a pinned PyTorch/CUDA stack. Installing a newer CUDA toolkit on
 
 ## 2. Download the source and model
 
+> [!IMPORTANT]
+> **Use the Git + Git LFS clone procedure below.** This is the recommended download method for both Docker and native installations.
+>
+> **Code → Download ZIP is not a supported installation method at present.** The source ZIP contains a Git LFS pointer instead of the model weights. If you already downloaded it, create a fresh clone using the commands below and install from that directory.
+
 The repository and released checkpoint are public. HTTPS cloning does not require a GitHub account, SSH key, or access token. Install Git LFS before cloning. For a Debian/Ubuntu system, Git and Git LFS can be installed with:
 
 ```bash
@@ -33,7 +38,7 @@ git clone --branch main https://github.com/bangwayne/cardiac-prism.git
 cd cardiac-prism
 ```
 
-For a reproducible installation, select a published release tag instead of a moving development branch:
+Use `main` for the current workstation and installation fixes. To reproduce the versioned source snapshot, you can select its source tag:
 
 ```bash
 git checkout v0.1.2
@@ -41,7 +46,7 @@ git checkout v0.1.2
 
 The `main` branch and `v0.1.2` source tag contain both the application and the released model. Git LFS downloads `weight/cardiac-prism-v0.1.pth` during a normal clone; its matching JSON profile is tracked beside it. You do not need a second branch or repository. The public ACDC example is downloaded during setup. All asset sizes and SHA-256 values are pinned in the manifest.
 
-If cloning skipped the model download, run `git lfs pull` or `python3 scripts/download_assets.py --weights`. The downloader can use the GitHub Release or recover the same checkpoint through Git LFS at the immutable `v0.1.2` source tag. It reuses the existing Git remote; an HTTPS clone needs no credentials. SSH cloning is also supported if you already have a working GitHub SSH key. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
+If cloning skipped the model download, run `git lfs pull` or `python3 scripts/download_assets.py --weights`. The downloader can recover the same checkpoint through Git LFS at the immutable `v0.1.2` source tag. It reuses the clone's Git remote; an HTTPS clone needs no credentials. GitHub Release attachments are not required for this installation path. SSH cloning is also supported if you already have a working GitHub SSH key. Do not substitute a different checkpoint while retaining this release's model description: the architecture, preprocessing, and weights must agree.
 
 ## 3. Install with Docker
 

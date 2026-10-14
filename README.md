@@ -18,7 +18,12 @@ The released checkpoint and workstation are configured for these three cardiac s
 
 **Source-available for noncommercial use.** The workstation and released cardiac model use [PolyForm Noncommercial 1.0.0](LICENSE). Academic research and other permitted noncommercial purposes are supported; commercial uses outside the license's permitted purposes require separate permission. Upstream components and public sample data retain their own licenses. See [NOTICE](NOTICE).
 
-The repository is public. Install Git LFS before cloning: the `main` branch contains both the application and its released checkpoint. HTTPS installation requires no GitHub account or access token.
+The repository is public. HTTPS cloning requires no GitHub account or access token.
+
+> [!IMPORTANT]
+> **Recommended installation: clone `main` with Git LFS, then follow [Quick start](#quick-start).** Install Git and Git LFS before cloning so that you receive both the application and the complete model weights. Docker and native installation commands are provided below.
+>
+> **Do not use Code → Download ZIP to install the workstation.** That source archive currently contains a Git LFS pointer instead of the model weights and is not a complete installation package.
 
 This is research software. Review predictions before using them in an analysis; the release is not a validated diagnostic product.
 
@@ -52,6 +57,8 @@ The released cardiac checkpoint was fine-tuned with expert annotations from **AC
 ## Quick start
 
 The supported server target is **Linux x86-64**. Use an NVIDIA GPU for interactive inference; a CPU installation is also available. On a Mac or Windows computer, use a browser to connect to the server.
+
+Use one of the verified installation methods below. Each starts by cloning `main` with Git LFS. If Git or Git LFS is missing, follow the [prerequisite installation steps](docs/install.md#2-download-the-source-and-model) first.
 
 ### Docker with an NVIDIA GPU
 
@@ -121,7 +128,7 @@ python3 scripts/download_assets.py --all
 python3 scripts/download_assets.py --all --verify
 ```
 
-For separate downloads, use `--weights` or `--sample`. The `main` branch includes `weight/cardiac-prism-v0.1.pth` through Git LFS, with its matching JSON profile alongside it. A normal clone with Git LFS installed retrieves the complete model. **Code and model weights are hosted on GitHub**; no Hugging Face account is needed. If the model was not downloaded during cloning, the installer can recover it from the GitHub Release or the immutable `v0.1.2` source tag through Git LFS.
+For separate downloads, use `--weights` or `--sample`. The `main` branch includes `weight/cardiac-prism-v0.1.pth` through Git LFS, with its matching JSON profile alongside it. A normal clone with Git LFS installed retrieves the complete model. **Code and model weights are hosted on GitHub**; no Hugging Face account is needed. If cloning skipped the model download, run `git lfs pull`. The installer can also recover the checkpoint from the immutable `v0.1.2` source tag through Git LFS using the clone's Git remote.
 
 The public example is downloaded separately under `demo-data/`. The [model card](docs/model-card.md) describes the checkpoint, preprocessing, and limitations. The [sample-data guide](docs/sample-data.md) records ACDC provenance, attribution, and its separate noncommercial data license.
 
