@@ -88,7 +88,7 @@ try {
     '--port', String(uiPort), '--strictPort'], environment, 'vite', true, frontend);
   await waitReady(ui, vite);
   for (const script of ['test_browser_artifacts.mjs', 'test_frame_archive.mjs', 'browser_refinement_controls.mjs', 'browser_orientation_pixels.mjs',
-    'browser_orientation_geometry.mjs', 'browser_surface_colors.mjs']) {
+    'browser_orientation_geometry.mjs', 'browser_view_orientation_controls.mjs', 'browser_surface_colors.mjs']) {
     console.log(`Running ${script}`);
     const started = Date.now();
     const result = { script, passed: false, seconds: 0 };

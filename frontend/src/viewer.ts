@@ -10,6 +10,8 @@ import { makeLocator3D } from './locator3D';
 import { makeSurface } from './mesh';
 import { SurfaceCameraController } from './surfaceCamera';
 import { scanAxesMatchPatientAxes, scanPlaneFit, scanViewOrientations } from './scanViewGeometry';
+import { displayCamera, loadDisplayOrientations, patientDirection, saveDisplayOrientations,
+  transformDisplay, type DisplayOrientations, type OrientationAction, type SliceViewName } from './viewOrientation';
 
 function rgb(hex: string): [number, number, number] {
   return [1, 3, 5].map(offset => parseInt(hex.slice(offset, offset + 2), 16) / 255) as [number, number, number];
@@ -68,11 +70,13 @@ export class MedicalViewer {
   private layerSettings: LayerSettings | null = null;
   private cancelLabelmapMount: (() => void) | null = null;
   private cancelFirstRender: (() => void) | null = null;
+  private displayOrientations: DisplayOrientations;
   ready = false;
   onRender: () => void;
 
   constructor(project: Project, onRender: () => void) {
     this.project = project;
+    this.displayOrientations = loadDisplayOrientations(project.id);
     const suffix = `${project.id}-${++instance}`;
     this.volumeId = `cardiac-prism:${suffix}`;
     this.viewIds = { native: `native-${suffix}`, coronal: `coronal-${suffix}`,
@@ -433,9 +437,45 @@ export class MedicalViewer {
     return this.viewport(name).worldToCanvas(this.indexToWorld(index));
   }
 
-  scroll(name: ViewName, index: Index3, direction: number): Index3 {
+  changeOrientation(name: SliceViewName, action: OrientationAction) {
+    if (!this.ready || this.disposed) return;
+    this.displayOrientations[name] = transformDisplay(this.displayOrientations[name], action);
+    this.applyDisplayOrientation(name);
+    saveDisplayOrientations(this.project.id, this.displayOrientations);
+    if (this.position) this.setPosition(this.position);
+    else this.viewport(name).render();
+    this.onRender();
+  }
+
+  private applyDisplayOrientation(name: SliceViewName) {
+    const viewport = this.viewport(name), camera = viewport.getCamera();
+    const { viewUp, viewPlaneNormal } = displayCamera(scanViewOrientations(this.project.direction)[name], this.displayOrientations[name]);
+    const focalPoint = camera.focalPoint!;
+    const distance = Math.max(1, Math.hypot(...camera.position!.map((n, i) => n - focalPoint[i])));
+    // Mirror the camera basis, not the image or DOM. All overlays and input tools
+    // continue using Cornerstone's physical canvas/world coordinate transforms.
+    viewport.setCamera({ viewUp, viewPlaneNormal, focalPoint,
+      position: focalPoint.map((n, i) => n + viewPlaneNormal[i] * distance) as Index3 });
+    viewport.getRenderer().resetCameraClippingRange();
+  }
+
+  orientationChanged(name: SliceViewName) {
+    return this.displayOrientations[name].some((n, i) => n !== [1, 0, 0, 1][i]);
+  }
+
+  patientDirections(name: SliceViewName) {
     const viewport = this.viewport(name);
-    const normal = viewport.getCamera().viewPlaneNormal!;
+    const x = viewport.element.clientWidth / 2, y = viewport.element.clientHeight / 2;
+    const center = viewport.canvasToWorld([x, y]);
+    const edge = (dx: number, dy: number) => patientDirection(viewport.canvasToWorld([x + dx, y + dy])
+      .map((n, i) => n - center[i]));
+    return { top: edge(0, -10), bottom: edge(0, 10), left: edge(-10, 0), right: edge(10, 0) };
+  }
+
+  scroll(name: ViewName, index: Index3, direction: number): Index3 {
+    if (name === 'volume') return index;
+    // Browsing direction follows the acquisition axis, independent of screen flips.
+    const normal = scanViewOrientations(this.project.direction)[name].viewPlaneNormal;
     const world = this.indexToWorld(index);
     // Native steps are exact acquisition slices. Reconstruction steps use
     // projected voxel spacing along the current acquisition-grid view normal.
@@ -455,6 +495,7 @@ export class MedicalViewer {
       const viewport = this.viewport(view);
       if (view === 'volume') this.surfaceCamera?.cancel();
       viewport.resetCamera();
+      if (view !== 'volume') this.applyDisplayOrientation(view);
       if (view !== 'volume' && viewport.element.clientWidth > 0 && viewport.element.clientHeight > 0) {
         const corners = Array.from({ length: 8 }, (_, corner) => this.indexToWorld(
           this.project.dimensions.map((size, axis) => corner & (1 << axis) ? size - .5 : -.5) as Index3));
@@ -494,6 +535,9 @@ export class MedicalViewer {
       window: this.viewport('native').getProperties(this.volumeId).voiRange,
       sliceCameras: sliceNames.map((name) => ({ name, camera: this.viewport(name).getCamera(),
         window: this.viewport(name).getProperties(this.volumeId).voiRange })),
+      displayOrientations: structuredClone(this.displayOrientations),
+      patientDirections: Object.fromEntries((['native', 'coronal', 'sagittal'] as const)
+        .map(name => [name, this.patientDirections(name)])),
       geometry: { dimensions: this.project.dimensions, spacing: this.project.spacing,
         origin: this.project.origin, direction: this.project.direction },
       reconstructionGeometry: { convention: 'acquisition',

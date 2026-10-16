@@ -120,15 +120,27 @@ select option { background: #101925; color: var(--text); }
 .history-tools button:hover:not(:disabled) { background: #26374c; }
 .viewer-region { position: relative; flex: 1; min-height: 0; }
 .viewport-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 10px; height: 100%; }
-.viewport-pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #263646; border-radius: 6px; overflow: hidden; background: #070b11; }
+.viewport-pane { position: relative; container-type: inline-size; display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #263646; border-radius: 6px; overflow: hidden; background: #070b11; }
 .viewport-pane:first-child { border-color: #375b5b; }
 .viewport-heading { display: flex; align-items: center; height: 35px; flex-shrink: 0; gap: 8px; padding: 0 10px; background: #13202e; border-bottom: 1px solid #1f3040; }
 .view-badge { font-size: 8px; letter-spacing: .7px; font-weight: 700; border: 1px solid currentColor; border-radius: 3px; padding: 2px 4px; opacity: .8; }
-.viewport-heading > strong { color: #bbcbd8; font-size: 10px; white-space: nowrap; }
+.viewport-heading > strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; color: #bbcbd8; font-size: 10px; white-space: nowrap; }
 .viewport-caption { color: #5e7b92; font-size: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.view-actions { margin-left: auto; display: flex; gap: 1px; }
+.view-actions { margin-left: auto; display: flex; flex-shrink: 0; gap: 1px; }
 .view-actions button { width: 22px; height: 24px; display: flex; align-items: center; justify-content: center; color: #7c94aa; border-radius: 3px; }
 .view-actions button:hover { background: #293c4e; }
+.view-actions .orientation-button { width: auto; gap: 4px; padding: 0 6px; font-size: 11px; color: #b8cddd; }
+.view-actions .orientation-button[aria-expanded="true"], .view-actions .orientation-button[data-adjusted="true"] { color: #75edce; background: #1a3937; }
+.orientation-panel { position: absolute; top: 38px; right: 6px; z-index: 8; width: min(340px, calc(100% - 12px)); max-height: calc(100% - 46px); overflow: auto; padding: 12px; border: 1px solid #54768c; border-radius: 7px; background: #142332; box-shadow: 0 6px 24px #0008; }
+.orientation-panel-heading { display: flex; justify-content: space-between; align-items: center; color: #e5f0f6; font-size: 13px; margin-bottom: 9px; }
+.orientation-panel-heading button { display: flex; padding: 4px; color: #c4d4e0; border-radius: 3px; }
+.orientation-options { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.orientation-options button, .orientation-reset { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 5px; border: 1px solid #456176; border-radius: 4px; color: #e1edf5; background: #20384a; font-size: 12px; }
+.orientation-options button:hover, .orientation-reset:hover { background: #2b5063; }
+.orientation-reset { width: 100%; margin-top: 7px; }
+.orientation-panel p { color: #bacfdd; font-size: 12px; line-height: 1.5; margin: 8px 0 0; }
+.orientation-panel button:focus-visible, .orientation-button:focus-visible { outline: 2px solid #75edce; outline-offset: 2px; }
+@container (max-width: 390px) { .view-actions .orientation-button span { display: none; } .viewport-caption { display: none; } }
 .view-actions .render-3d-button { width: auto; gap: 5px; padding: 0 7px; margin-right: 5px; color: #b3dced; border: 1px solid #34556c; font-size: 10px; white-space: nowrap; }
 .view-actions .render-3d-button[aria-pressed="true"] { color: #70f1c5; border-color: #407969; background: #19352f; }
 .surface-empty-note { position: absolute; bottom: 12px; left: 12px; color: #a6bbcc; font-size: 11px; pointer-events: none; }

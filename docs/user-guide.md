@@ -71,6 +71,12 @@ All views share the same location and time cursor. Use **Locate** to click in a 
 
 Use **Pan**, **Zoom**, and **Window** for navigation and display. **Fit** resets the view to the image extent. Expand a view with its corner control and collapse it to return to the four-view layout. The expanded view uses the same cursor as the other views.
 
+Each of the three 2D views has an **Orientation** button. Use **Flip left / right**, **Flip up / down**, or **Rotate 90° left / right** to choose a comfortable viewing direction. **Reset orientation** restores that view's original direction; **Fit** changes the framing while retaining your chosen orientation. Each view is independent. These preferences remain while browsing layers, playing the cine, and expanding a view, and are remembered for that study in the same browser.
+
+Edge markers follow patient coordinates in the scan metadata: **H** head, **F** feet, **L** left, **R** right, **A** anterior, and **P** posterior. Combined letters indicate an oblique direction. In an oblique SAX plane, a patient's head direction may not lie exactly in the plane, so a flip or quarter turn does not create an anatomical reslice. Use the markers to check the viewing direction.
+
+Orientation controls change only the display. Images, masks, click positions, model inputs, and NIfTI exports retain their original voxel grid and physical geometry. Browser viewing preferences are separate from saved annotations and full-study backups.
+
 The left display panel controls:
 
 - Each structure's visibility and color-coded selection.

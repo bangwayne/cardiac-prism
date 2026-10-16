@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Expand, Minimize2, RotateCcw, Scan, Box, LoaderCircle } from 'lucide-react';
+import { Expand, Minimize2, RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Scan, Box, LoaderCircle, X } from 'lucide-react';
 import { MedicalViewer } from './viewer';
 import { nearestPixel, pixelStroke } from './pixelBrush';
 import { isSliceLocked } from './lockScope';
 import { scanAxesMatchPatientAxes } from './scanViewGeometry';
+import type { OrientationAction, SliceViewName } from './viewOrientation';
 import type { Index3, LayerSettings, Point, Project, Tool, ViewName } from './types';
 
 type Props = {
@@ -37,6 +38,7 @@ export default function ViewportGrid(props: Props) {
   const [ready, setReady] = useState(false);
   const [renderTick, setRenderTick] = useState(0);
   const [expanded, setExpanded] = useState<ViewName | null>(null);
+  const [orientationMenu, setOrientationMenu] = useState<SliceViewName | null>(null);
   const [stroke, setStroke] = useState<[number, number][]>([]);
   const [hover, setHover] = useState<{ point: [number, number]; scope: string } | null>(null);
   const gesture = useRef<{ pointerId: number; start: [number, number]; points: [number, number][]; tool: Tool; positive: boolean; index: number; scope: string } | null>(null);
@@ -45,7 +47,7 @@ export default function ViewportGrid(props: Props) {
   const surfaceVisible = surface?.state === 'ready' || surface?.state === 'empty';
 
   useEffect(() => {
-    let active = true; setReady(false);
+    let active = true; setReady(false); setOrientationMenu(null);
     const medical = new MedicalViewer(latest.current.project, () => {
       if (animation.current === null) animation.current = requestAnimationFrame(() => {
         animation.current = null; if (active) setRenderTick((tick) => tick + 1);
@@ -94,6 +96,24 @@ export default function ViewportGrid(props: Props) {
     const timer = setTimeout(() => viewer.current?.resize(), 50);
     return () => clearTimeout(timer);
   }, [expanded]);
+
+  useEffect(() => {
+    if (!orientationMenu) return;
+    const outside = (event: PointerEvent) => {
+      if (!(event.target instanceof Element) || !event.target.closest('[data-orientation-controls]')) setOrientationMenu(null);
+    };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') setOrientationMenu(null); };
+    document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
+  }, [orientationMenu]);
+
+  function changeOrientation(name: SliceViewName, action: OrientationAction) {
+    const active = gesture.current; gesture.current = null; setStroke([]); setHover(null);
+    if (active && elements.current.native?.hasPointerCapture(active.pointerId)) {
+      elements.current.native.releasePointerCapture(active.pointerId);
+    }
+    viewer.current?.changeOrientation(name, action);
+  }
 
   useEffect(() => {
     const cleanup: (() => void)[] = [];
@@ -217,6 +237,7 @@ export default function ViewportGrid(props: Props) {
       return viewer.current!.indexToCanvas(name, [hoverPixel[0] + Math.cos(angle) * radius, hoverPixel[1] + Math.sin(angle) * radius,
         props.position[2]]).join(',');
     }).join(' ') : null;
+    const directions = viewer.current.patientDirections(name);
     return <svg className="viewport-overlay" width={width} height={height} aria-hidden="true">
       {!painting && <g data-testid="view-locator" opacity={props.layers.crosshairOpacity} stroke={props.layers.crosshairColor}>
       <line x1={0} y1={center[1]} x2={width} y2={center[1]} stroke="#071019" strokeWidth={3.5} />
@@ -243,6 +264,13 @@ export default function ViewportGrid(props: Props) {
             viewer.current!.indexToCanvas(name, [0, 0, props.position[2]])[axis])))} strokeOpacity=".4" strokeLinecap="round" />}
       {hoverPixel && <polygon points={props.brushRadius === 0 ? polygon(hoverPixel) : outline!} fill="none"
         stroke={cursorColor} strokeWidth=".8" strokeOpacity=".9" data-testid="brush-cursor" />}
+      <g data-testid={`patient-orientation-${name}`} className="patient-orientation-markers" fill="#e8f4fb"
+        fontSize={14} fontWeight={700} paintOrder="stroke" stroke="#071019" strokeWidth={4} strokeLinejoin="round">
+        <text data-edge="top" x={width / 2} y={21} textAnchor="middle">{directions.top}</text>
+        <text data-edge="bottom" x={width / 2} y={height - 12} textAnchor="middle">{directions.bottom}</text>
+        <text data-edge="left" x={12} y={height / 2} dominantBaseline="middle">{directions.left}</text>
+        <text data-edge="right" x={width - 12} y={height / 2} textAnchor="end" dominantBaseline="middle">{directions.right}</text>
+      </g>
     </svg>;
   }
 
@@ -254,6 +282,14 @@ export default function ViewportGrid(props: Props) {
         <strong title={definition.name === 'coronal' || definition.name === 'sagittal' ?
           'Reconstruction follows the acquisition grid. Original patient coordinates are preserved.' : undefined}>{definition.title}</strong><span className="viewport-caption">{definition.caption}</span>
         <div className="view-actions">
+          {definition.name !== 'volume' && <button className="orientation-button" data-testid={`orientation-${definition.name}`}
+            data-orientation-controls aria-label={`Orientation for ${definition.title}`}
+            aria-expanded={orientationMenu === definition.name} aria-controls={`orientation-panel-${definition.name}`}
+            disabled={!ready} data-adjusted={ready && viewer.current?.orientationChanged(definition.name) ? 'true' : 'false'}
+            title="Flip or rotate this view"
+            onClick={() => setOrientationMenu(orientationMenu === definition.name ? null : definition.name as SliceViewName)}>
+            <RotateCw size={14} /><span>Orientation</span>
+          </button>}
           {definition.name === 'volume' && <button className="render-3d-button" data-testid="render-3d"
             aria-label={surfaceVisible ? 'Hide 3D' : 'Render 3D'} aria-pressed={surfaceVisible}
             disabled={!ready || props.busy || surface?.state === 'rendering'}
@@ -270,6 +306,25 @@ export default function ViewportGrid(props: Props) {
           </button>
         </div>
       </div>
+      {definition.name !== 'volume' && orientationMenu === definition.name && <div className="orientation-panel"
+        id={`orientation-panel-${definition.name}`} data-orientation-controls role="group" aria-label={`${definition.title} display orientation`}>
+        <div className="orientation-panel-heading"><strong>Display orientation</strong>
+          <button aria-label="Close orientation controls" onClick={() => setOrientationMenu(null)}><X size={15} /></button></div>
+        <div className="orientation-options">
+          <button data-testid={`flip-horizontal-${definition.name}`} onClick={() => changeOrientation(definition.name as SliceViewName, 'horizontal')}>
+            <FlipHorizontal2 size={16} />Flip left / right</button>
+          <button data-testid={`flip-vertical-${definition.name}`} onClick={() => changeOrientation(definition.name as SliceViewName, 'vertical')}>
+            <FlipVertical2 size={16} />Flip up / down</button>
+          <button data-testid={`rotate-counterclockwise-${definition.name}`} onClick={() => changeOrientation(definition.name as SliceViewName, 'counterclockwise')}>
+            <RotateCcw size={16} />Rotate 90° left</button>
+          <button data-testid={`rotate-clockwise-${definition.name}`} onClick={() => changeOrientation(definition.name as SliceViewName, 'clockwise')}>
+            <RotateCw size={16} />Rotate 90° right</button>
+        </div>
+        <button className="orientation-reset" data-testid={`reset-orientation-${definition.name}`}
+          onClick={() => changeOrientation(definition.name as SliceViewName, 'reset')}>Reset orientation</button>
+        <p>Applies to this view. Remembered for this study in this browser.</p>
+        <p>H head · F feet · L left · R right · A anterior · P posterior. Combined letters indicate oblique directions from scan metadata.</p>
+      </div>}
       <div className={`viewport-host tool-${props.tool}`} ref={(element) => { elements.current[definition.name] = element; }}
         data-testid={`viewport-${definition.name}`}
         title={definition.name === 'volume' ? 'Left drag: rotate · Right drag: zoom · Middle drag: pan · Wheel: zoom' : undefined}
