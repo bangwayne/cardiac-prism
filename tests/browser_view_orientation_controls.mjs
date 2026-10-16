@@ -321,6 +321,77 @@ try {
     await page.unroute('**/api/projects/' + study.id + '/inference');
     await page.unroute('**/api/jobs/orientation-coordinate-test');
   });
+  await check('Changing orientation during a pending click preserves queued coordinates and the returned mask location', async () => {
+    const before = await state(), beforeMasks = await masks(0), beforeMetadata = await metadata();
+    const first = [17, 15, before.position[2]], second = [19, 17, before.position[2]];
+    const requests = [];
+    let completed = false;
+    await page.route('**/api/projects/' + study.id + '/inference', async route => {
+      requests.push(route.request().postDataJSON());
+      await route.fulfill({ json: { id: 'orientation-pending-' + requests.length, state: 'queued', seconds: 0 } });
+    });
+    await page.route('**/api/jobs/orientation-pending-*', async route => {
+      const id = route.request().url().split('/').at(-1);
+      await route.fulfill({ json: { id, state: completed ? 'completed' : 'running', seconds: 0, changed_voxels: 1 } });
+    });
+    try {
+      await page.getByLabel('Include (1)', { exact: true }).click(); await clickIndex('native', first);
+      await expect.poll(() => requests.length).toBe(1);
+      await expect(page.getByTestId('segment-all')).toBeDisabled();
+      await action('native', 'rotate-clockwise'); await action('native', 'flip-horizontal');
+      close((await state()).position, before.position); assert.equal((await state()).time, before.time);
+      await page.getByLabel('Exclude (2)', { exact: true }).click(); await clickIndex('native', second);
+      assert.equal(requests.length, 1, 'The second click must wait for the first result');
+
+      // Publish a known result into the isolated backend, then release the delayed
+      // transport. This exercises real mask refresh without a model dependency.
+      const written = await page.request.post(prefix + '/brush', { data: { revision: beforeMetadata.revision,
+        time: before.time, slice: first[2], organ: 2, points: [first.slice(0, 2)], radius: 0, erase: false } });
+      assert(written.ok(), await written.text());
+      completed = true;
+      await expect.poll(() => requests.length, { timeout: 30000 }).toBe(2); await idle();
+      for (const [index, target] of [first, second].entries()) {
+        const request = requests[index];
+        close([request.point.x, request.point.y], target.slice(0, 2), .01);
+        assert.equal(request.point.positive, index === 0);
+        assert.equal(request.time, before.time); assert.equal(request.slice, first[2]); assert.equal(request.organ, 2);
+        assert(!Object.keys(request).some(key => /orientation|rotation|flip/i.test(key)));
+      }
+      const [, depth, height, width] = study.shape, expected = Buffer.from(beforeMasks);
+      expected[depth * height * width + (first[2] * height + first[1]) * width + first[0]] = 1;
+      assert.deepEqual(await masks(0), expected); assert.deepEqual(await masks(1), originalMasks[1]);
+      await expect.poll(async () => page.evaluate(index =>
+        window.__CARDIAC_PRISM_DIAGNOSTICS__.frameValues(index).masks[1],
+      (first[2] * height + first[1]) * width + first[0])).toBe(2);
+      const marker = (await samples('native', [first], 'pending-result.png'))[0];
+      assert(!marker.outside && Math.max(...marker.rgb) - Math.min(...marker.rgb) > 20,
+        'Delayed mask must appear on the clicked original voxel after the view changes');
+      await page.getByLabel('Undo edit', { exact: true }).click(); await idle();
+      assert.deepEqual(await masks(0), beforeMasks);
+      await action('native', 'flip-horizontal'); await action('native', 'rotate-counterclockwise');
+      assertDirections(await state(), before);
+    } finally {
+      completed = true;
+      await page.unroute('**/api/projects/' + study.id + '/inference');
+      await page.unroute('**/api/jobs/orientation-pending-*');
+    }
+  });
+  await check('A display transform cancels an unfinished brush stroke without committing a misplaced edit', async () => {
+    const before = await metadata(), beforeMasks = await masks(0);
+    await page.getByLabel('Brush (4)', { exact: true }).click();
+    const [point] = await coordinates('native', [[16, 14, (await state()).position[2]]]);
+    const box = await page.getByTestId('viewport-native').boundingBox();
+    await page.mouse.move(box.x + point[0], box.y + point[1]); await page.mouse.down();
+    // A second input device or keyboard activation can change the view while a
+    // pointer remains held down. It must never join two different screen bases.
+    await page.getByTestId('orientation-native').evaluate(element => element.click());
+    await page.getByTestId('flip-horizontal-native').evaluate(element => element.click());
+    await page.mouse.move(box.x + point[0] + 30, box.y + point[1]); await page.mouse.up();
+    await page.getByTestId('orientation-native').click();
+    await idle();
+    assert.equal((await metadata()).revision, before.revision); assert.deepEqual(await masks(0), beforeMasks);
+    await action('native', 'flip-horizontal');
+  });
   let brushedVoxel;
   await check('One-pixel brush, erase and undo edit only the visible original voxel in the selected time frame', async () => {
     await page.getByLabel('Brush (4)', { exact: true }).click();
@@ -345,6 +416,31 @@ try {
       'import sys,json,SimpleITK as s,numpy as n;i=s.ReadImage(sys.argv[1]);e=s.ReadImage(sys.argv[2]);a=s.GetArrayFromImage(i);b=s.GetArrayFromImage(e);v=json.loads(sys.argv[3]);a[tuple(v)]=2;assert n.array_equal(a,b);assert i.GetSize()==e.GetSize();assert n.allclose(i.GetSpacing(),e.GetSpacing(),rtol=0,atol=1e-5);assert n.allclose(i.GetOrigin(),e.GetOrigin(),rtol=0,atol=1e-5);assert n.allclose(i.GetDirection(),e.GetDirection(),rtol=0,atol=1e-5);print(json.dumps({"original_geometry":True,"labels_exact":True,"edited_voxel_tzyx":v}))',
       labelsPath, exported, JSON.stringify(brushedVoxel)], { encoding: 'utf8' });
     report.export = JSON.parse(result);
+  });
+  await check('Slice and all-time layer clears, undo and redo retain the original scope after a rotated reflection', async () => {
+    const current = await state(), [frames, depth, height, width] = study.shape;
+    assert.notDeepEqual(current.displayOrientations.native, identity);
+    const before = await Promise.all(Array.from({ length: frames }, (_, time) => masks(time)));
+    for (const scope of ['slice', 'layer']) {
+      const revision = (await metadata()).revision;
+      const expected = before.map((bytes, time) => {
+        const next = Buffer.from(bytes);
+        if (scope === 'layer' || time === current.time) for (let organ = 0; organ < 3; organ++) {
+          const start = (organ * depth + current.position[2]) * height * width;
+          next.fill(0, start, start + height * width);
+        }
+        return next;
+      });
+      await page.getByTestId('clear-all-masks-' + scope).click();
+      await expect.poll(async () => (await metadata()).revision).toBe(revision + 1); await idle();
+      for (let time = 0; time < frames; time++) assert.deepEqual(await masks(time), expected[time]);
+      for (const [step, command] of ['Undo edit', 'Redo edit', 'Undo edit'].entries()) {
+        await page.getByLabel(command, { exact: true }).click();
+        await expect.poll(async () => (await metadata()).revision).toBe(revision + step + 2); await idle();
+        for (let time = 0; time < frames; time++) assert.deepEqual(await masks(time), (step === 1 ? expected : before)[time]);
+      }
+      assertDirections(await state(), current); close((await state()).position, current.position);
+    }
   });
   await check('Reset affects only the chosen view and persists its original orientation', async () => {
     const before = await state(); await action('native', 'reset-orientation');
