@@ -75,7 +75,7 @@ export type Health = {
     requested_device: string; hostname: string;
     available_devices: { id: string; name: string; memory_gb?: number }[] };
 };
-export type Tool = 'positive' | 'negative' | 'crosshair' | 'brush' | 'erase' | 'pan' | 'zoom' | 'window';
+export type Tool = 'positive' | 'negative' | 'crosshair' | 'brush' | 'erase' | 'lasso' | 'pan' | 'zoom' | 'window';
 export type Index3 = [number, number, number];
 export type ViewName = 'native' | 'coronal' | 'sagittal' | 'volume';
 export type LayerSettings = {

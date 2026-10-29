@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Expand, Minimize2, RotateCcw, RotateCw, FlipHorizontal2, FlipVertical2, Scan, Box, LoaderCircle, X } from 'lucide-react';
 import { MedicalViewer } from './viewer';
 import { nearestPixel, pixelStroke } from './pixelBrush';
+import { lassoSpans } from './lasso';
 import { isSliceLocked } from './lockScope';
 import { scanAxesMatchPatientAxes } from './scanViewGeometry';
 import type { OrientationAction, SliceViewName } from './viewOrientation';
@@ -12,6 +13,9 @@ type Props = {
   position: Index3; setPosition: (position: Index3) => void;
   tool: Tool; structure: number; layers: LayerSettings; windowRange: [number, number];
   busy: boolean; acceptsPoints: boolean; pendingPoints: Point[]; brushRadius: number;
+  lassoErase: boolean; peekOriginal: boolean;
+  onBrushStep: (step: number) => void; onGesture: (active: boolean) => void;
+  onLasso: (points: [number, number][], erase: boolean) => void;
   onPoint: (point: Point) => void; onStroke: (points: [number, number][], erase: boolean) => void;
   onReady: (viewer: MedicalViewer | null) => void; onError: (error: string) => void;
   onLayers: (settings: LayerSettings) => void;
@@ -60,6 +64,7 @@ export default function ViewportGrid(props: Props) {
       const current = latest.current;
       medical.setPosition(current.position); medical.setTool(current.tool);
       medical.updateFrame(current.project, current.image, current.masks, current.reference); medical.setLayers(current.layers);
+      medical.setPeekOriginal(current.peekOriginal);
       medical.setWindow(current.windowRange);
       if (!await medical.renderAndWait() || !active) return;
       setReady(true); current.onReady(medical);
@@ -81,6 +86,7 @@ export default function ViewportGrid(props: Props) {
       animation.current = null; medical.dispose(); viewer.current = null;
       delete (window as Window & { __CARDIAC_PRISM_DIAGNOSTICS__?: unknown }).__CARDIAC_PRISM_DIAGNOSTICS__;
       latest.current.onReady(null);
+      latest.current.onGesture(false);
     };
   }, [props.project.id]);
 
@@ -88,6 +94,7 @@ export default function ViewportGrid(props: Props) {
     if (ready) viewer.current?.updateFrame(props.project, props.image, props.masks, props.reference);
   }, [props.time, props.image, props.masks, props.reference, ready]);
   useEffect(() => { if (ready) viewer.current?.setLayers(props.layers); }, [props.layers, ready]);
+  useLayoutEffect(() => { if (ready) viewer.current?.setPeekOriginal(props.peekOriginal); }, [props.peekOriginal, ready]);
   useLayoutEffect(() => { if (ready) viewer.current?.setPlayback(props.playing); }, [props.playing, ready]);
   useEffect(() => { if (ready) viewer.current?.setTool(props.tool); }, [props.tool, ready]);
   useLayoutEffect(() => { if (ready) viewer.current?.setPosition(props.position); }, [props.position, ready]);
@@ -107,11 +114,24 @@ export default function ViewportGrid(props: Props) {
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape); };
   }, [orientationMenu]);
 
-  function changeOrientation(name: SliceViewName, action: OrientationAction) {
+  function cancelGesture() {
     const active = gesture.current; gesture.current = null; setStroke([]); setHover(null);
+    latest.current.onGesture(false);
     if (active && elements.current.native?.hasPointerCapture(active.pointerId)) {
       elements.current.native.releasePointerCapture(active.pointerId);
     }
+  }
+
+  useEffect(() => {
+    const cancel = () => cancelGesture();
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') cancelGesture(); };
+    window.addEventListener('blur', cancel); document.addEventListener('keydown', escape);
+    return () => { window.removeEventListener('blur', cancel); document.removeEventListener('keydown', escape); };
+  }, []);
+  useEffect(() => { cancelGesture(); }, [props.time, props.position[2], props.tool, props.structure, props.lassoErase]);
+
+  function changeOrientation(name: SliceViewName, action: OrientationAction) {
+    cancelGesture();
     viewer.current?.changeOrientation(name, action);
   }
 
@@ -124,6 +144,11 @@ export default function ViewportGrid(props: Props) {
         if (!viewer.current?.ready) return;
         event.preventDefault(); event.stopPropagation();
         const current = latest.current;
+        if (gesture.current || event.deltaY === 0) return;
+        if (event.ctrlKey) {
+          if (['brush', 'erase'].includes(current.tool)) current.onBrushStep(event.deltaY < 0 ? 1 : -1);
+          return;
+        }
         const next = viewer.current.scroll(definition.name, current.position, event.deltaY > 0 ? 1 : -1);
         current.setPosition([next[0], next[1], Math.round(next[2])]);
       };
@@ -157,11 +182,12 @@ export default function ViewportGrid(props: Props) {
       props.onError('Pause playback and wait for the current operation before editing.'); return;
     }
     elements.current.native!.setPointerCapture(event.pointerId);
+    props.onGesture(true);
     const first: [number, number] = [index[0], index[1]];
     gesture.current = { pointerId: event.pointerId, start: [event.clientX, event.clientY], points: [first], tool: props.tool,
       positive: props.tool === 'positive' && !event.shiftKey, index: Math.round(index[2]),
       scope: `${props.project.id}:${props.time}:${props.structure}:${props.position[2]}` };
-    if (props.tool === 'brush' || props.tool === 'erase') setStroke([first]);
+    if (['brush', 'erase', 'lasso'].includes(props.tool)) setStroke([first]);
   }
 
   function pointerMove(name: ViewName, event: React.PointerEvent) {
@@ -170,10 +196,13 @@ export default function ViewportGrid(props: Props) {
       setHover(index ? { point: [index[0], index[1]], scope: `${props.project.id}:${props.time}:${props.position[2]}` } : null);
     }
     const active = gesture.current;
-    if (name !== 'native' || !active || active.pointerId !== event.pointerId || !(event.buttons & 1) || !['brush', 'erase'].includes(active.tool)) return;
+    if (name !== 'native' || !active || active.pointerId !== event.pointerId || !(event.buttons & 1) || !['brush', 'erase', 'lasso'].includes(active.tool)) return;
     const index = pointAt(name, event); if (!index) return;
     const previous = active.points[active.points.length - 1];
     if (Math.hypot(index[0] - previous[0], index[1] - previous[1]) > .4) {
+      if (active.points.length >= 1999) {
+        cancelGesture(); props.onError('This outline is too long. Draw a shorter region.'); return;
+      }
       active.points.push([index[0], index[1]]); setStroke([...active.points]);
     }
   }
@@ -181,17 +210,22 @@ export default function ViewportGrid(props: Props) {
   function pointerUp(name: ViewName, event: React.PointerEvent) {
     const active = gesture.current;
     if (name !== 'native' || !active || active.pointerId !== event.pointerId || event.button !== 0) return;
-    gesture.current = null; setStroke([]);
+    gesture.current = null; setStroke([]); props.onGesture(false);
     if (active.scope !== `${props.project.id}:${props.time}:${props.structure}:${props.position[2]}`) {
       props.onError('The view changed during the gesture. Click again on the displayed frame.'); return;
     }
     if (isSliceLocked(props.project, props.time, props.position[2])) {
       props.onError('This slice is locked. Unlock it in Edit History before editing.'); return;
     }
-    if (['brush', 'erase'].includes(active.tool)) {
+    if (['brush', 'erase', 'lasso'].includes(active.tool)) {
       const end = pointAt(name, event);
       if (end) active.points.push([end[0], end[1]]);
-      props.onStroke(active.points, active.tool === 'erase');
+      if (active.tool === 'lasso') {
+        if (!lassoSpans(active.points, props.project.dimensions[0], props.project.dimensions[1]).length) {
+          props.onError('Draw a lasso around an area before releasing.'); return;
+        }
+        props.onLasso(active.points, props.lassoErase);
+      } else props.onStroke(active.points, active.tool === 'erase');
     } else if (Math.hypot(event.clientX - active.start[0], event.clientY - active.start[1]) < 5) {
       const index = pointAt(name, event);
       if (index) props.onPoint({ x: index[0], y: index[1], positive: active.positive });
@@ -225,6 +259,20 @@ export default function ViewportGrid(props: Props) {
     const drawStroke = stroke.map(([x, y]) => viewer.current!.indexToCanvas(name, [x, y, props.position[2]]));
     const painting = name === 'native' && ['brush', 'erase'].includes(props.tool);
     const dimensions: [number, number] = [props.project.dimensions[0], props.project.dimensions[1]];
+    const previewSpans = name === 'native' && props.tool === 'lasso' ? lassoSpans(stroke, ...dimensions) : [];
+    const protectedLabels = props.lassoErase ? [] : props.project.structures.filter(item => item.id !== props.structure && item.locked);
+    const lassoPreview = protectedLabels.length ? previewSpans.flatMap(([y, start, end]) => {
+      const spans: [number, number, number][] = [];
+      const plane = dimensions[0] * dimensions[1], volume = plane * props.project.dimensions[2];
+      let beginning = -1;
+      for (let x = start; x <= end; x++) {
+        const protectedPixel = x === end || protectedLabels.some(item =>
+          props.masks[(item.id - 1) * volume + props.position[2] * plane + y * dimensions[0] + x]);
+        if (protectedPixel && beginning >= 0) { spans.push([y, beginning, x]); beginning = -1; }
+        else if (!protectedPixel && beginning < 0) beginning = x;
+      }
+      return spans;
+    }) : previewSpans;
     function polygon(pixel: [number, number]): string {
       return [[-.5, -.5], [.5, -.5], [.5, .5], [-.5, .5]].map(([dx, dy]) =>
         viewer.current!.indexToCanvas(name, [pixel[0] + dx, pixel[1] + dy, props.position[2]]).join(',')).join(' ');
@@ -239,7 +287,7 @@ export default function ViewportGrid(props: Props) {
     }).join(' ') : null;
     const directions = viewer.current.patientDirections(name);
     return <svg className="viewport-overlay" width={width} height={height} aria-hidden="true">
-      {!painting && <g data-testid="view-locator" opacity={props.layers.crosshairOpacity} stroke={props.layers.crosshairColor}>
+      {!painting && props.tool !== 'lasso' && <g data-testid="view-locator" opacity={props.layers.crosshairOpacity} stroke={props.layers.crosshairColor}>
       <line x1={0} y1={center[1]} x2={width} y2={center[1]} stroke="#071019" strokeWidth={3.5} />
       <line x1={center[0]} y1={0} x2={center[0]} y2={height} stroke="#071019" strokeWidth={3.5} />
       <line x1={0} y1={center[1]} x2={width} y2={center[1]} className="crosshair-line" />
@@ -264,6 +312,14 @@ export default function ViewportGrid(props: Props) {
             viewer.current!.indexToCanvas(name, [0, 0, props.position[2]])[axis])))} strokeOpacity=".4" strokeLinecap="round" />}
       {hoverPixel && <polygon points={props.brushRadius === 0 ? polygon(hoverPixel) : outline!} fill="none"
         stroke={cursorColor} strokeWidth=".8" strokeOpacity=".9" data-testid="brush-cursor" />}
+      {name === 'native' && props.tool === 'lasso' && stroke.length > 1 && <g data-testid="lasso-preview">
+        <path fill={props.lassoErase ? '#fff' : structure.color} fillOpacity=".3" d={lassoPreview.map(([y, start, end]) => {
+          const corners = [[start - .5, y - .5], [end - .5, y - .5], [end - .5, y + .5], [start - .5, y + .5]];
+          return corners.map(([x, py], i) => `${i ? 'L' : 'M'}${viewer.current!.indexToCanvas(name, [x, py, props.position[2]]).join(',')}`).join(' ') + 'Z';
+        }).join(' ')} />
+        <polygon points={drawStroke.map(point => point.join(',')).join(' ')} fill="none"
+          stroke={props.lassoErase ? '#fff' : structure.color} strokeWidth="1.5" />
+      </g>}
       <g data-testid={`patient-orientation-${name}`} className="patient-orientation-markers" fill="#e8f4fb"
         fontSize={14} fontWeight={700} paintOrder="stroke" stroke="#071019" strokeWidth={4} strokeLinejoin="round">
         <text data-edge="top" x={width / 2} y={21} textAnchor="middle">{directions.top}</text>
@@ -333,8 +389,8 @@ export default function ViewportGrid(props: Props) {
         onPointerMove={(event) => pointerMove(definition.name, event)}
         onPointerLeave={() => setHover(null)}
         onPointerUp={(event) => pointerUp(definition.name, event)}
-        onPointerCancel={(event) => { if (gesture.current?.pointerId === event.pointerId) { gesture.current = null; setStroke([]); } }}
-        onLostPointerCapture={(event) => { if (gesture.current?.pointerId === event.pointerId) { gesture.current = null; setStroke([]); } }}>
+        onPointerCancel={(event) => { if (gesture.current?.pointerId === event.pointerId) cancelGesture(); }}
+        onLostPointerCapture={(event) => { if (gesture.current?.pointerId === event.pointerId) cancelGesture(); }}>
         {overlay(definition.name)}
         {ready && definition.name === 'volume' && surface?.state === 'empty' &&
           <div className="surface-empty-note">No masks on this frame</div>}

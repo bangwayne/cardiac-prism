@@ -68,6 +68,7 @@ export class MedicalViewer {
   private surfaceState: 'off' | 'rendering' | 'ready' | 'empty' = 'off';
   private surfaceTime: number | null = null;
   private layerSettings: LayerSettings | null = null;
+  private peeking = false;
   private cancelLabelmapMount: (() => void) | null = null;
   private cancelFirstRender: (() => void) | null = null;
   private displayOrientations: DisplayOrientations;
@@ -352,13 +353,19 @@ export class MedicalViewer {
     this.frameUpdates++; this.renderSlices();
   }
 
+  setPeekOriginal(hidden: boolean) {
+    if (this.peeking === hidden) return;
+    this.peeking = hidden;
+    if (this.layerSettings) this.setLayers(this.layerSettings);
+  }
+
   setLayers(settings: LayerSettings) {
     if (!this.ready) return;
     this.layerSettings = settings;
     for (let index = 0; index < this.segmentations.length; index++) {
       const reference = index === 3;
       const segmentationId = this.segmentations[index];
-      const visible = reference ? settings.showReference : settings.visible[index + 1];
+      const visible = !this.peeking && settings.opacity > 0 && (reference ? settings.showReference : settings.visible[index + 1]);
       for (const name of sliceNames) {
         const viewportId = this.viewIds[name];
         segmentation.config.visibility.setSegmentationRepresentationVisibility(viewportId, { segmentationId }, visible);
@@ -372,7 +379,7 @@ export class MedicalViewer {
           fillAlpha: visible ? settings.opacity : 0, fillAlphaInactive: visible ? settings.opacity : 0,
           renderOutline: visible, renderOutlineInactive: visible,
           outlineWidth: reference ? 1 : 1.2, outlineWidthInactive: reference ? 1 : 1.2,
-          outlineOpacity: reference ? .9 : 1, outlineOpacityInactive: reference ? .9 : 1,
+          outlineOpacity: visible ? settings.opacity : 0, outlineOpacityInactive: visible ? settings.opacity : 0,
           activeSegmentOutlineWidthDelta: 0,
         });
       }

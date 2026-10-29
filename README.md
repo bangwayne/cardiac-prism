@@ -31,7 +31,7 @@ This is research software. Review predictions before using them in an analysis; 
 
 - Linked acquisition, two reconstruction, and 3D locator views with a shared position and time cursor.
 - 3D NIfTI, 4D NIfTI cine, and a single classic MR DICOM series imported from a folder.
-- Organ-based segmentation, positive and negative clicks, one-pixel brush and eraser, and undo / redo.
+- Organ-based segmentation, positive and negative clicks, one-pixel brush and eraser, lasso fill/erase, and undo / redo.
 - All-structure segmentation for one slice, all layers in a frame, or all time frames; optional multiple-GPU execution.
 - Same-layer temporal propagation from 1–3 reference frames, with protection for manual edits.
 - Locks for selected frame × layer combinations, study notes, completion markers, and a readable activity history.
@@ -115,7 +115,7 @@ Then open **http://localhost:8502/** on that computer. If local port 8502 is occ
 1. Open **Library** and select the downloaded ACDC example, or upload your own `.nii` / `.nii.gz` volume.
 2. Choose a layer and time frame. Pause playback before editing.
 3. Select **RV**, **MYO**, or **LV**, then use **Segment this slice** or **Segment all**.
-4. Refine with **Include**, **Exclude**, **Brush**, or **Erase**. Inspect other layers and frames.
+4. Refine with **Include**, **Exclude**, **Brush**, **Erase**, or **Lasso**. Hold **H** to peek at the original image, use **← / →** to step through time, and **Ctrl + wheel** over a 2D view to resize the brush or eraser. Inspect other layers and frames.
 5. Lock accepted frame/layer combinations in **Edit History** before a larger segmentation or propagation job.
 6. Add a note, click **Save study**, and use **Full study backup** to download a portable copy.
 

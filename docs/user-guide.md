@@ -80,7 +80,7 @@ Orientation controls change only the display. Images, masks, click positions, mo
 The left display panel controls:
 
 - Each structure's visibility and color-coded selection.
-- **Mask opacity** for the 2D overlay.
+- **Mask opacity** for both the 2D mask fill and its outline. At 0%, both disappear, including in **Contours only** mode.
 - **Locator color** and **Locator opacity** for the crosshair.
 - **Point opacity** for positive/negative click markers. Hiding markers does not delete prompts.
 - **Reference contours** when a reference annotation has been imported.
@@ -88,9 +88,13 @@ The left display panel controls:
 
 The default structure colors are RV coral, MYO green, and LV purple. DICOM and NIfTI use the same palette and material settings.
 
+Hold **H**, or hold the eye button in the annotation toolbar, to temporarily hide all 2D masks and reference contours. Release to restore the previous appearance. This does not change your opacity settings, annotations, or the 3D model. Moving focus away from the browser restores the overlay automatically. **Shift + click** retains its negative-click behavior.
+
 ## Browse a 4D cine
 
 For a 4D study, the **CINE** controls provide **Play / Pause**, previous/next frame, a time slider, a requested FPS, and looping. Frame and layer numbers shown in the UI start at 1.
+
+Use **Left / Right arrow** to step backward or forward in time while keeping the current layer and viewing direction. Stepping pauses playback and stops at the first/last frame. Finish or cancel an active brush stroke or lasso before navigating.
 
 Playback synchronizes the image and existing mask for each frame. It does not copy a mask from one frame to another, generate a prediction, or propagate prompts. If only one frame has been segmented, the others remain unsegmented until you process or import them.
 
@@ -116,12 +120,17 @@ First select **RV**, **MYO**, or **LV** in the structure list. The selected stru
 | **Exclude** | Adds a negative point in an unwanted region. `Shift + click` while using Include also excludes. |
 | **Brush** | Paints the selected organ in the current acquisition slice. |
 | **Erase** | Removes selected-organ pixels in the current acquisition slice. |
+| **Lasso** | Drag an outline and release to fill its interior with the selected organ, or choose **Erase** in the Lasso options to remove that organ inside the outline. |
 
 **Clicks operate only on the current `(time frame, acquisition layer, organ)`**. They do not spread to neighboring layers or other time frames. A click submits a new prediction; wait for it to finish before evaluating the result. Predicted changes are not guaranteed to improve every case.
 
 The default **Organ + clicks** mode combines the organ query and point prompts. **Clicks only** uses point prompts without the organ query. Changing modes starts a new prompt history for the next click. Brush and erase changes become the working annotation for later refinement.
 
 The smallest brush/eraser size is **one original image pixel**, not one browser-screen pixel. Zoom in to work precisely. Painting an organ gives that selected organ priority at painted pixels and removes overlapping pixels from other **unlocked** structures. A locked structure remains protected; unlock it if an intentional replacement is required.
+
+With Brush or Erase selected, hold **Ctrl** and scroll over a 2D view to adjust size: wheel up increases it and wheel down decreases it. The layer stays fixed and the browser does not zoom. The **− / +** buttons beside the size value provide the same adjustment; the slider remains available. Sizes follow the existing 1, 3, 5… pixel steps. Without Ctrl, scrolling retains its usual slice-navigation behavior.
+
+**Lasso** is alongside Brush and Erase in the toolbar (shortcut **L**). A preview shows the enclosed pixels; the outline closes automatically when you release. Fill replaces other unlocked structures in the region, while Erase removes only the selected organ. Locked pixels remain protected. The entire operation affects only the current frame and acquisition layer and can be undone in one step. Press **Esc** to discard an unfinished outline. Display flips and rotations do not change its native voxel coordinates. For a ring-shaped annotation, fill the outer contour and erase the inner region, or preserve an already locked inner structure.
 
 Whole-study jobs show preparation and per-GPU progress. The first job on a GPU takes extra time to load its model. Batch predictions are applied together when the job succeeds, so no partial result may be visible during computation. **Cancel** preserves the annotation from before the job. One **Undo** reverts the committed batch.
 
@@ -206,13 +215,17 @@ Shortcuts apply when focus is outside a text field or menu.
 | `1` / `2` | Include / Exclude |
 | `3` | Locate |
 | `4` / `5` | Brush / Erase |
+| `L` | Lasso |
+| Hold `H` | Temporarily hide 2D masks and reference contours |
+| `Ctrl` + wheel over a 2D view | Increase/decrease Brush or Erase size |
 | `6` / `7` / `8` | Pan / Zoom / Window |
 | `↑` / `↓` | Previous / next acquisition layer |
+| `←` / `→` | Previous / next time frame; pause cine |
 | `R` | Fit views |
 | `Space` | Play / pause cine |
 | `Ctrl+S` or `⌘S` | Save study |
 | `Ctrl+Z` or `⌘Z` | Undo |
 | `Ctrl+Shift+Z`, `⌘Shift+Z`, or `Ctrl+Y` | Redo |
-| `Esc` | Pause playback or close the current dialog |
+| `Esc` | Cancel an unfinished stroke/lasso, pause playback, or close the current dialog |
 
 If a control is disabled, check playback, an active task, completion status, and the relevant slice or organ lock. Connection and installation problems are covered in [Troubleshooting](install.md#troubleshooting).

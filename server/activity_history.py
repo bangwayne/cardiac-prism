@@ -196,6 +196,13 @@ def _entry(event, revision, coverage, complete, frames, depth):
         text = f'Ran AI segmentation for {selected} on {scope}; interaction mode was not recorded.'
     elif action in ('inference', 'segment_all', 'segment_all_layers', 'segment_all_time_frames'):
         text = f'Segmented {organ_text} on {scope}.'
+    elif action in ('lasso_fill', 'lasso_erase'):
+        text = f'{"Filled" if action == "lasso_fill" else "Erased"} {selected} with the lasso on {scope}.'
+        others = [label for label in organs if label != event.get('organ')]
+        if others:
+            text += f' Also updated {_organ_text(others)} where the lasso replaced existing labels.'
+        if event.get('protected_voxels'):
+            text += f' Preserved {event["protected_voxels"]} pixels belonging to locked structures.'
     elif action in ('brush', 'erase'):
         text = f'{"Painted" if action == "brush" else "Erased"} {selected} with the {"brush" if action == "brush" else "eraser"} on {scope}.'
         others = [label for label in organs if label != event.get('organ')]

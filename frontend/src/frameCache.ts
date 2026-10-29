@@ -27,7 +27,7 @@ export function frameChanges(previous: Project, next: Project) {
       for (let frame = 0; frame < next.shape[0]; frame++) frames.add(frame);
       continue;
     }
-    if (!['brush', 'erase', 'clear_slice', 'clear_all_masks_slice', 'resolve_overlaps', 'inference', 'segment_all', 'segment_all_layers'].includes(event.action) ||
+    if (!['brush', 'erase', 'lasso_fill', 'lasso_erase', 'clear_slice', 'clear_all_masks_slice', 'resolve_overlaps', 'inference', 'segment_all', 'segment_all_layers'].includes(event.action) ||
         !Number.isInteger(event.time_frame) || event.time_frame! < 0 || event.time_frame! >= next.shape[0])
       return { frames: undefined, referenceChanged };
     frames.add(event.time_frame!);

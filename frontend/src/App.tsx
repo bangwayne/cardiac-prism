@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity, ArrowLeft, ArrowRight, Check, ChevronDown, CircleHelp,
   FolderOpen, Keyboard, LoaderCircle, Save, Scan, Undo2, Redo2, Upload,
-  X, AlertCircle, RotateCcw, Layers3, Clock3, Play, Pause, SkipBack, SkipForward, Repeat, Trash2, ArchiveRestore,
+  X, AlertCircle, RotateCcw, Layers3, Clock3, Play, Pause, SkipBack, SkipForward, Repeat, Trash2, ArchiveRestore, EyeOff,
 } from 'lucide-react';
 import { api, APIError } from './api';
 import { FrameCache, frameChanges } from './frameCache';
@@ -53,6 +53,11 @@ export default function App() {
   const [tool, setTool] = useState<Tool>('positive');
   const [mode, setMode] = useState<'organ_click' | 'click'>('organ_click');
   const [brushRadius, setBrushRadius] = useState(0);
+  const [lassoErase, setLassoErase] = useState(false);
+  const [peekOriginal, setPeekOriginal] = useState(false);
+  const drawing = useRef(false);
+  const stepTarget = useRef<number | null>(null);
+  const stepping = useRef(false);
   const [layers, setLayers] = useState<LayerSettings>(initialLayers);
   const [windowRange, setWindowRange] = useState<[number, number]>([0, 255]);
   const [loading, setLoading] = useState('Opening workspace');
@@ -485,7 +490,7 @@ export default function App() {
   async function edit(action: string, details: Record<string, unknown> = {}) {
     const captured = projectRef.current;
     if (!captured || current.current.busy) return;
-    if (['brush', 'clear-points', 'clear-slice', 'clear-all-masks-slice', 'resolve-overlaps'].includes(action) &&
+    if (['brush', 'lasso', 'clear-points', 'clear-slice', 'clear-all-masks-slice', 'resolve-overlaps'].includes(action) &&
       isSliceLocked(captured, navigation.current.time, navigation.current.position[2])) {
       error(new Error('This slice is locked. Unlock it in Edit History before editing.')); return;
     }
@@ -494,7 +499,7 @@ export default function App() {
       if (action === 'save') await notesSave.current?.();
       const scope = { time: navigation.current.time, slice: navigation.current.position[2] };
       const metadata = await api.edit(captured, action, details, scope.time, scope.slice);
-      if (!applyMetadataOnly(metadata)) await refresh(captured.id, false, ['brush', 'clear-slice', 'clear-all-masks-slice', 'clear-all-masks-layer'].includes(action) ?
+      if (!applyMetadataOnly(metadata)) await refresh(captured.id, false, ['brush', 'lasso', 'clear-slice', 'clear-all-masks-slice', 'clear-all-masks-layer'].includes(action) ?
         { metadata, previousRevision: captured.revision, ...scope } : undefined);
       if (action === 'save') { setStudies(await api.studies()); setNotice({ type: 'success', text: 'Study saved. Masks and click history can be restored.' }); }
     } catch (value) { error(value); await reconcileAfterError(captured); } finally { setEditing(false); }
@@ -693,7 +698,7 @@ export default function App() {
   }
 
   async function changeTime(frame: number) {
-    if (!projectRef.current || loading || editing || job || !viewerReady) return;
+    if (!projectRef.current || loading || editing || job || !viewerReady || drawing.current || stepping.current) return;
     pausePlayback();
     if (frame === navigation.current.time) return;
     const generation = playbackGeneration.current;
@@ -752,9 +757,45 @@ export default function App() {
   }
 
   function setLocation(next: Index3) {
-    if (!project) return;
+    if (!project || drawing.current) return;
     setPosition(next.map((value, axis) => Math.max(0, Math.min(project.dimensions[axis] - 1, axis === 2 ? Math.round(value) : value))) as Index3);
   }
+
+  async function stepTime(delta: number) {
+    const captured = projectRef.current;
+    if (!captured || captured.shape[0] < 2 || loading || editing || job || !viewerReady || drawing.current ||
+      (buffering && !stepping.current)) return;
+    stepTarget.current = Math.max(0, Math.min(captured.shape[0] - 1, (stepTarget.current ?? navigation.current.time) + delta));
+    if (stepping.current) return;
+    pausePlayback();
+    const generation = playbackGeneration.current;
+    stepping.current = true;
+    try {
+      while (stepTarget.current !== null && generation === playbackGeneration.current && projectRef.current?.id === captured.id) {
+        const target: number = stepTarget.current;
+        if (target === navigation.current.time) break;
+        setBuffering(`Opening frame ${target + 1}`);
+        if (!await displayFrame(target, generation)) break;
+        if (stepTarget.current === target) break;
+      }
+    } catch (value) { if (generation === playbackGeneration.current) error(value); }
+    finally {
+      stepping.current = false; stepTarget.current = null;
+      if (generation === playbackGeneration.current) setBuffering('');
+    }
+  }
+
+  useEffect(() => {
+    const release = () => setPeekOriginal(false);
+    const up = (event: KeyboardEvent) => { if (event.code === 'KeyH') release(); };
+    window.addEventListener('blur', release); window.addEventListener('keyup', up);
+    document.addEventListener('visibilitychange', release);
+    return () => {
+      window.removeEventListener('blur', release); window.removeEventListener('keyup', up);
+      document.removeEventListener('visibilitychange', release);
+    };
+  }, []);
+  useEffect(() => { setPeekOriginal(false); }, [project?.id, libraryOpen, helpOpen]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -774,6 +815,11 @@ export default function App() {
         return;
       }
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) return;
+      if (event.code === 'KeyH' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (project && viewerReady) { event.preventDefault(); setPeekOriginal(true); }
+        return;
+      }
+      if (drawing.current && event.key !== 'Escape') return;
       if (event.key === 'Escape') { pausePlayback(); setLibraryOpen(false); setHelpOpen(false); return; }
       if (event.code === 'Space') { event.preventDefault(); togglePlayback(); return; }
       if ((event.ctrlKey || event.metaKey) && ['s', 'z', 'y'].includes(event.key.toLowerCase())) {
@@ -782,7 +828,11 @@ export default function App() {
         else void edit(event.key.toLowerCase() === 'y' || event.shiftKey ? 'redo' : 'undo');
         return;
       }
-      const choice = tools.find((candidate) => candidate.key === event.key);
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+        event.preventDefault(); void stepTime(event.key === 'ArrowRight' ? 1 : -1); return;
+      }
+      const choice = tools.find((candidate) => candidate.key.toLowerCase() === event.key.toLowerCase());
       if (choice) setTool(choice.id);
       else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault(); const value = navigation.current;
@@ -830,10 +880,17 @@ export default function App() {
           <div className="workspace-topline"><div><span className="section-label">SEGMENTATION WORKSPACE</span><span className="workspace-subtitle">Review anatomy. Refine with a click.</span></div>
             <span className="layout-label"><Layers3 size={13} /> 4-view layout</span></div>
           <div className="toolbar" role="toolbar" aria-label="Annotation tools">
-            <div className="tool-group">{tools.map((item, index) => <button key={item.id} className={`tool-button ${tool === item.id ? 'active' : ''} ${index === 3 || index === 5 ? 'tool-separator' : ''}`}
+            <div className="tool-group">{tools.map((item, index) => <button key={item.id} className={`tool-button ${tool === item.id ? 'active' : ''} ${index === 3 || item.id === 'pan' ? 'tool-separator' : ''}`}
               aria-label={`${item.name} (${item.key})`} aria-pressed={tool === item.id} title={`${item.name} · ${item.key}`}
               onClick={() => setTool(item.id)}><item.icon size={17} /><span>{item.name}</span></button>)}</div>
-            <div className="history-tools"><button title="Undo · Ctrl+Z" aria-label="Undo edit" disabled={busy || !project.undo_count} onClick={() => void edit('undo')}><Undo2 size={17} /></button>
+            <div className="history-tools"><button className={`peek-button ${peekOriginal ? 'active' : ''}`}
+              title="Hold to peek at the original image · H" aria-label="Peek original (hold H)" aria-pressed={peekOriginal}
+              onPointerDown={event => { if (event.button !== 0) return; event.currentTarget.setPointerCapture(event.pointerId); setPeekOriginal(true); }}
+              onPointerUp={() => setPeekOriginal(false)} onPointerCancel={() => setPeekOriginal(false)}
+              onLostPointerCapture={() => setPeekOriginal(false)} onBlur={() => setPeekOriginal(false)}
+              onKeyDown={event => { if ([' ', 'Enter'].includes(event.key)) { event.preventDefault(); event.stopPropagation(); setPeekOriginal(true); } }}
+              onKeyUp={event => { if ([' ', 'Enter'].includes(event.key)) { event.preventDefault(); setPeekOriginal(false); } }}><EyeOff size={17} /></button>
+              <button title="Undo · Ctrl+Z" aria-label="Undo edit" disabled={busy || !project.undo_count} onClick={() => void edit('undo')}><Undo2 size={17} /></button>
               <button title="Redo · Ctrl+Shift+Z" aria-label="Redo edit" disabled={busy || !project.redo_count} onClick={() => void edit('redo')}><Redo2 size={17} /></button>
               <button title="Fit all views · R" aria-label="Fit all views" onClick={() => viewer.current?.fit()}><RotateCcw size={15} /></button></div>
           </div>
@@ -841,6 +898,10 @@ export default function App() {
             <ViewportGrid key={project.id} project={project} time={time} playing={playing} image={data.image} masks={data.masks} reference={data.reference}
               position={position} setPosition={setLocation} tool={tool} structure={selected} layers={layers} onLayers={setLayers} windowRange={windowRange}
               busy={busy} acceptsPoints={acceptsPoints} pendingPoints={pendingPoints.length ? pendingPoints : pendingPoint ? [pendingPoint] : []} brushRadius={brushRadius}
+              lassoErase={lassoErase} peekOriginal={peekOriginal}
+              onBrushStep={step => setBrushRadius(radius => Math.max(0, Math.min(30, radius + step)))}
+              onGesture={active => { drawing.current = active; }}
+              onLasso={(points, erase) => void edit('lasso', { time, slice: position[2], organ: selected, points, erase })}
               onPoint={queuePoint}
               onStroke={(points, erase) => void edit('brush', { time, slice: position[2], organ: selected, points, erase, radius: brushRadius })}
               onReady={(medical) => {
@@ -898,6 +959,7 @@ export default function App() {
             onReopen={() => { const study = studies.find(item => item.id === project.id); if (study) void toggleStudyComplete(study); }} />}
         </main>
         <Inspector project={project} selected={selected} tool={tool} mode={mode} brushRadius={brushRadius} windowRange={windowRange} busy={busy}
+          lassoErase={lassoErase} onLassoErase={setLassoErase}
           onDemoPredictions={() => void edit('demo-predictions')}
           pairedAnnotation={demos.find(example => example.name === project.name && example.has_annotation)}
           onPairedAnnotation={() => void edit('paired-annotation')}
@@ -986,6 +1048,10 @@ export default function App() {
       <div className="shortcut-list">{tools.map((item) => <div key={item.id}><span>{item.name}</span><kbd>{item.key}</kbd></div>)}
         <div><span>Exclusion point while including</span><kbd>Shift + click</kbd></div><div><span>Undo / redo</span><kbd>Ctrl + Z / Ctrl + Shift + Z</kbd></div>
         <div><span>Save study</span><kbd>Ctrl + S</kbd></div><div><span>Previous / next slice</span><kbd>↑ / ↓</kbd></div><div><span>Fit all views</span><kbd>R</kbd></div><div><span>Play / pause cine</span><kbd>Space</kbd></div>
+        <div><span>Previous / next time frame</span><kbd>← / →</kbd></div>
+        <div><span>Peek original (hold)</span><kbd>H</kbd></div>
+        <div><span>Brush / eraser size over a 2D view</span><kbd>Ctrl + wheel</kbd></div>
+        <div><span>Cancel unfinished stroke or lasso</span><kbd>Esc</kbd></div>
         <div><span>Pan / window level</span><kbd>Middle / right drag</kbd></div></div>
     </section></div>}
   </div>;

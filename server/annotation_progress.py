@@ -1,7 +1,7 @@
 """Small frame/layer edit summaries; no probability priors are read."""
 import numpy as np
 
-MANUAL = {'brush', 'erase', 'clear_slice', 'clear_all_masks_slice',
+MANUAL = {'brush', 'erase', 'lasso_fill', 'lasso_erase', 'clear_slice', 'clear_all_masks_slice',
           'clear_all_masks_layer', 'resolve_overlaps'}
 BASELINE = {'segment_all', 'segment_all_layers', 'segment_all_time_frames',
             'import_annotation', 'import_paired_annotation', 'import_evaluated_predictions', 'propagate_time'}

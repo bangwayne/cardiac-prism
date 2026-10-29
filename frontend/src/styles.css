@@ -110,6 +110,13 @@ select option { background: #101925; color: var(--text); }
 .layout-label { display: flex; align-items: center; gap: 6px; color: #6e879e; font-size: 9px; }
 .toolbar { display: flex; justify-content: space-between; align-items: center; height: 48px; flex-shrink: 0; margin-bottom: 12px; padding: 4px 5px; background: #131e2c; border: 1px solid #273649; border-radius: 6px; gap: 4px; }
 .tool-group { display: flex; align-items: center; gap: 3px; }
+.brush-size-control { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 12px; color: #c3d5e1; font-size: 12px; }
+.brush-size-control button { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border: 1px solid #3b5267; border-radius: 5px; background: #192a3a; }
+.brush-size-control strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lasso-options { display: flex; gap: 8px; margin: 10px 0; }
+.lasso-options button { flex: 1; min-height: 34px; border: 1px solid #3b5267; border-radius: 5px; color: #c3d5e1; }
+.lasso-options button[aria-pressed='true'], .peek-button.active { background: #1b3737; color: #a7ead6; border-color: #52d9bd; }
+.tool-lasso { cursor: crosshair; }
 .tool-button { height: 36px; padding: 0 10px; border: 1px solid transparent; display: flex; align-items: center; gap: 7px; border-radius: 4px; color: #8fa5bb; font-size: 10px; }
 .tool-button.active { border-color: #34665e; background: #1b3737; color: #a7ead6; }
 .tool-button:hover:not(.active) { background: #1d2a3b; }

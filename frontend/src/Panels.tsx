@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Eye, EyeOff, LockKeyhole, LockKeyholeOpen, ChevronDown, BrainCircuit,
   WandSparkles, Download, Upload, ScanLine, Layers3, Check, CircleHelp,
-  CirclePlus, CircleMinus, Crosshair, Hand, ZoomIn, Contrast, Brush, Eraser,
+  CirclePlus, CircleMinus, Crosshair, Hand, ZoomIn, Contrast, Brush, Eraser, Lasso, Minus, Plus,
 } from 'lucide-react';
 import type { Demo, GPUDevice, Health, LayerSettings, Project, Tool, StudyNotes as Notes } from './types';
 import StudyNotes from './StudyNotes';
@@ -15,6 +15,7 @@ export const tools: { id: Tool; name: string; key: string; icon: typeof CirclePl
   { id: 'crosshair', name: 'Locate', key: '3', icon: Crosshair },
   { id: 'brush', name: 'Brush', key: '4', icon: Brush },
   { id: 'erase', name: 'Erase', key: '5', icon: Eraser },
+  { id: 'lasso', name: 'Lasso', key: 'L', icon: Lasso },
   { id: 'pan', name: 'Pan', key: '6', icon: Hand },
   { id: 'zoom', name: 'Zoom', key: '7', icon: ZoomIn },
   { id: 'window', name: 'Window', key: '8', icon: Contrast },
@@ -136,6 +137,7 @@ export function StudyPanel({ project, health, selected, layers, busy, onSelect, 
 type RightProps = {
   project: Project; selected: number; tool: Tool; mode: 'organ_click' | 'click';
   brushRadius: number; windowRange: [number, number]; busy: boolean;
+  lassoErase: boolean; onLassoErase: (erase: boolean) => void;
   onMode: (mode: 'organ_click' | 'click') => void; onBrushRadius: (radius: number) => void;
   onWindow: (range: [number, number]) => void; onAutomatic: () => void;
   onClear: (kind: 'clear-points' | 'clear-slice' | 'clear-all-masks-slice' | 'clear-all-masks-layer') => void;
@@ -179,15 +181,24 @@ export function Inspector(props: RightProps) {
       {sliceLocked && <div className="frame-protection-note" data-testid="frame-protection-note"><LockKeyhole size={13} /><span>Frame {props.project.time + 1}, layer {props.project.slice + 1} is protected for RV + MYO + LV. Unlock it in Edit History to modify masks or prompts. Browsing and export remain available.</span></div>}
       <div className="instruction-card">{props.tool === 'positive' ? <>Click <strong>inside</strong> the structure to include it.<br /><span>Shift + click adds an exclusion point.</span></> :
         props.tool === 'negative' ? <>Click an <strong>unwanted region</strong> to exclude it.</> :
+        props.tool === 'lasso' ? <>Drag a closed outline, then release to {props.lassoErase ? 'erase' : 'fill'} <strong>{structure.short}</strong> inside it on this frame and layer. Press Esc to cancel. Locked structures are preserved.</> :
         props.tool === 'brush' || props.tool === 'erase' ? <>Drag to {props.tool === 'brush' ? 'paint' : 'erase'} this structure on this slice.
           {props.tool === 'brush' && <> Your selected structure, <strong>{structure.short}</strong>, has highest painting priority and replaces other unlocked structures at painted pixels.</>} Your edits become the next AI refinement input.</> :
         props.tool === 'crosshair' ? <>Click any slice view to locate the same point across all three planes.</> :
         <>Drag to {props.tool === 'pan' ? 'pan the image' : props.tool === 'zoom' ? 'adjust zoom' : 'adjust window and level'}. Scroll to browse slices.</>}</div>
-      {(props.tool === 'brush' || props.tool === 'erase') && <><div className="range-caption"><span>{props.tool === 'erase' ? 'Eraser size' : 'Brush size'}</span>
-        <span>{props.brushRadius * 2 + 1} {props.brushRadius === 0 ? 'pixel' : 'px'}</span></div>
+      {props.tool === 'lasso' && <div className="lasso-options" role="group" aria-label="Lasso operation">
+        <button aria-pressed={!props.lassoErase} onClick={() => props.onLassoErase(false)}>Fill</button>
+        <button aria-pressed={props.lassoErase} onClick={() => props.onLassoErase(true)}>Erase</button>
+      </div>}
+      {(props.tool === 'brush' || props.tool === 'erase') && <><div className="brush-size-control">
+        <button aria-label="Decrease brush size" disabled={props.brushRadius === 0}
+          onClick={() => props.onBrushRadius(Math.max(0, props.brushRadius - 1))}><Minus size={18} /></button>
+        <span>{props.tool === 'erase' ? 'Eraser' : 'Brush'} size: <strong>{props.brushRadius * 2 + 1} px</strong></span>
+        <button aria-label="Increase brush size" disabled={props.brushRadius === 30}
+          onClick={() => props.onBrushRadius(Math.min(30, props.brushRadius + 1))}><Plus size={18} /></button></div>
         <input type="range" min="0" max="30" value={props.brushRadius} aria-label={props.tool === 'erase' ? 'Eraser size' : 'Brush size'}
           onChange={(event) => props.onBrushRadius(Number(event.target.value))} />
-        <p className="muted-help">{props.brushRadius === 0 ? 'One original image pixel. Drag for a line one pixel wide.' : 'Size is measured in original image pixels.'}</p></>}
+        <p className="muted-help">Ctrl + wheel over a 2D view adjusts size. {props.brushRadius === 0 ? 'One original image pixel. Drag for a line one pixel wide.' : 'Size is measured in original image pixels.'}</p></>}
       <div className="prompt-counter"><span><i className="positive-dot" /> {structure.points.filter((point) => point.positive).length} include</span>
         <span><i className="negative-dot" /> {structure.points.filter((point) => !point.positive).length} exclude</span></div>
       <div className="small-button-row">

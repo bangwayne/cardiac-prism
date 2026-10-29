@@ -29,6 +29,7 @@ from .study_management import set_completion, delete_study, cleanup_deleted
 from .annotation_progress import summary as annotation_summary
 from .activity_history import activity
 from .dicom_import import import_folder, ConverterUnavailable
+from .lasso import lasso_mask
 
 ROOT = Path(__file__).resolve().parents[1]
 log = logging.getLogger(__name__)
@@ -95,6 +96,12 @@ class DeviceRequest(BaseModel):
 class BrushRequest(SliceRequest):
     points: list[tuple[float, float]] = Field(min_length=1, max_length=2000)
     radius: int = Field(ge=0, le=30)
+    erase: bool = False
+
+
+class LassoRequest(SliceRequest):
+    model_config = ConfigDict(allow_inf_nan=False)
+    points: list[tuple[float, float]] = Field(min_length=3, max_length=2000)
     erase: bool = False
 
 
@@ -462,6 +469,39 @@ def create_app(workspace=None, model=None):
             project.commit(snapshot, 'erase' if request.erase else 'brush',
                            time_frame=request.time, slice=request.slice, organ=request.organ,
                            radius=request.radius, affected_organs=affected, overlap_policy='painted_structure_wins')
+            return project.view(request.time, request.slice)
+
+    @application.post('/api/projects/{project_id}/lasso')
+    def lasso(project_id: str, request: LassoRequest):
+        project = store.get(project_id)
+        with project.lock:
+            editable(project, request.revision, request.organ, request.time, request.slice)
+            project.check_slice(request.time, request.slice, request.organ)
+            region = lasso_mask(project.voxels.shape[2:], request.points)
+            protected = 0
+            affected = [request.organ]
+            if not request.erase:
+                for label in ORGANS:
+                    if label != request.organ and project.locks[label]:
+                        protected += int(np.count_nonzero(region & project.masks[label][request.time, request.slice].astype(bool)))
+                        region &= ~project.masks[label][request.time, request.slice].astype(bool)
+                if not region.any():
+                    raise ValueError('The lasso covers only locked structures. Unlock the relevant structure to replace it.')
+                affected += [label for label in ORGANS if label != request.organ and not project.locks[label]
+                             and np.any(project.masks[label][request.time, request.slice][region])]
+            snapshot = project.snapshot((request.time, request.slice, tuple(affected)),
+                                        'Lasso erase' if request.erase else 'Lasso fill')
+            project.masks[request.organ][request.time, request.slice][region] = 0 if request.erase else 1
+            for label in affected:
+                if label != request.organ:
+                    project.masks[label][request.time, request.slice][region] = 0
+                key = (request.time, request.slice, label)
+                project.contexts[key] = manual_context(project.masks[label][request.time, request.slice],
+                                                      project.context(key)['mode'])
+            project.commit(snapshot, 'lasso_erase' if request.erase else 'lasso_fill',
+                           time_frame=request.time, slice=request.slice, organ=request.organ,
+                           affected_organs=affected, protected_voxels=protected,
+                           overlap_policy='painted_structure_wins')
             return project.view(request.time, request.slice)
 
     @application.post('/api/projects/{project_id}/demo-predictions')
